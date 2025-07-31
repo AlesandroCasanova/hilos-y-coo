@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestión de Empleados - Hilos y Coo</title>
+  <link rel="stylesheet" href="css/empleados.css">
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+    <h2>Hilos y Coo</h2>
+    <ul>
+      <li><a href="dashboard.html">📊 Dashboard</a></li>
+      <li><a href="productos.html">🧵 Productos</a></li>
+      <li><a href="inventario.html">📦 Inventario</a></li>
+      <li><a href="ventas.html">💸 Ventas</a></li>
+      <li><a href="proveedores.html">🚚 Proveedores</a></li>
+      <li><a href="usuarios.html" class="activo">👥 Empleados</a></li>
+      <li><a href="pagos.html">💰 Pagos</a></li>
+      <li><a href="impuestos.html">🧾 Impuestos</a></li>
+      <li><a href="finanzas.html">📈 Finanzas</a></li>
+      <li><a href="pedidos.html">📥 Pedidos</a></li>
+      <li><a href="index.html" onclick="localStorage.clear()">🚪 Salir</a></li>
+    </ul>
+  </div>
+
+  <div class="contenido">
+    <h1>Gestión de Empleados</h1>
+
+    <div class="formulario">
+      <h2>Registrar Empleado</h2>
+      <form id="formEmpleado">
+        <label>Nombre:</label>
+        <input type="text" name="nombre" required />
+
+        <label>Email:</label>
+        <input type="email" name="email" required />
+
+        <label>Contraseña:</label>
+        <input type="password" name="contraseña" required />
+
+        <button type="submit">Registrar</button>
+      </form>
+    </div>
+
+    <div class="listado">
+      <h2>Empleados Registrados</h2>
+      <table id="tablaEmpleados">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Rol</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Se cargan dinámicamente con JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module" src="js/empleados.js"></script>
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+    }
+  </script>
+</body>
+</html>

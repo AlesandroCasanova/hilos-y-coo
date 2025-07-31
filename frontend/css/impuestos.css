@@ -1,0 +1,195 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+/* ----- SIDEBAR ----- */
+.sidebar {
+  width: 220px;
+  height: 100vh;
+  background-color: #343a40;
+  color: white;
+  padding: 20px 15px;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.sidebar h2 {
+  font-size: 22px;
+  margin-bottom: 30px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar ul li {
+  margin-bottom: 15px;
+}
+
+.sidebar ul li a {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  display: block;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+.sidebar ul li a:hover {
+  background-color: #495057;
+}
+
+/* ----- CONTENIDO PRINCIPAL ----- */
+.contenido {
+  margin-left: 220px;
+  padding: 30px;
+  width: calc(100% - 220px);
+}
+
+h1 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+.main-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+/* ----- FORMULARIO ----- */
+form {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  width: 300px;
+  min-width: 250px;
+}
+
+form label {
+  display: block;
+  margin-top: 12px;
+  font-weight: bold;
+}
+
+form input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  transition: border 0.3s;
+}
+
+form input:focus {
+  border-color: #28a745;
+  outline: none;
+}
+
+form button {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+  width: 100%;
+}
+
+form button:hover {
+  background-color: #1e7e34;
+}
+
+/* ----- TABLA ----- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+table th {
+  background-color: #28a745;
+  color: white;
+  padding: 12px;
+  text-align: left;
+}
+
+table td {
+  padding: 12px;
+  border-top: 1px solid #ddd;
+}
+
+/* ----- RESPONSIVE ----- */
+@media screen and (max-width: 768px) {
+  .contenido {
+    margin-left: 0;
+    width: 100%;
+    padding: 15px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .main-grid {
+    flex-direction: column;
+  }
+}
+
+/* Botón de colapsar */
+.toggle-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+/* Sidebar cuando está colapsado */
+.sidebar.collapsed {
+  width: 60px;
+}
+
+.sidebar.collapsed h2,
+.sidebar.collapsed ul li a {
+  display: none;
+}
+
+.sidebar.collapsed .toggle-btn {
+  font-size: 24px;
+  margin: 0 auto 20px auto;
+  display: block;
+}
+
+.contenido {
+  margin-left: 220px;
+  padding: 30px;
+  transition: margin-left 0.3s ease;
+  width: calc(100% - 220px);
+}
+
+.sidebar.collapsed ~ .contenido {
+  margin-left: 60px;
+  width: calc(100% - 60px);
+}

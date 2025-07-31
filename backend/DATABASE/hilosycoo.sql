@@ -1,0 +1,333 @@
+-- Crear base de datos
+CREATE DATABASE IF NOT EXISTS hilosycoo;
+USE hilosycoo;
+
+-- Tabla de usuarios
+CREATE TABLE usuarios (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100),
+  email VARCHAR(100) UNIQUE,
+  contraseña VARCHAR(255),
+  rol ENUM('Dueño', 'Empleado') DEFAULT 'Empleado'
+);
+
+-- Tabla de proveedores
+CREATE TABLE proveedores (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100),
+  contacto VARCHAR(100)
+);
+
+-- Tabla de productos
+CREATE TABLE productos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100),
+  descripcion TEXT,
+  codigo VARCHAR(50) UNIQUE,
+  categoria VARCHAR(50),
+  proveedor_id INT,
+  precio_proveedor DECIMAL(10,2),
+  precio DECIMAL(10,2),
+  imagen VARCHAR(255),
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
+);
+
+-- Tabla de variantes
+CREATE TABLE variantes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  producto_id INT,
+  talle VARCHAR(20),
+  color VARCHAR(30),
+  stock INT,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+-- Historial de precios
+CREATE TABLE historial_precios (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  producto_id INT NOT NULL,
+  precio_anterior DECIMAL(10,2),
+  precio_nuevo DECIMAL(10,2),
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+  usuario_id INT,
+  FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+-- Historial de stock
+CREATE TABLE historial_stock (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  variante_id INT,
+  tipo_movimiento ENUM('Ingreso', 'Egreso', 'Ajuste'),
+  cantidad INT,
+  motivo VARCHAR(100),
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (variante_id) REFERENCES variantes(id)
+);
+
+-- Ajustes de inventario
+CREATE TABLE ajustes_inventario (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  variante_id INT,
+  stock_anterior INT,
+  stock_nuevo INT,
+  motivo VARCHAR(100),
+  usuario_id INT,
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (variante_id) REFERENCES variantes(id),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- Carrito
+CREATE TABLE carrito (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT,
+  variante_id INT,
+  cantidad INT,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+  FOREIGN KEY (variante_id) REFERENCES variantes(id)
+);
+
+-- Ventas
+CREATE TABLE ventas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT,
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+  total DECIMAL(10,2),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- Detalle venta
+CREATE TABLE detalle_venta (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  venta_id INT,
+  variante_id INT,
+  cantidad INT,
+  precio_unitario DECIMAL(10,2),
+  FOREIGN KEY (venta_id) REFERENCES ventas(id),
+  FOREIGN KEY (variante_id) REFERENCES variantes(id)
+);
+
+-- Cuotas de venta
+CREATE TABLE cuotas_venta (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  venta_id INT,
+  nro_cuota INT,
+  monto DECIMAL(10,2),
+  fecha_vencimiento DATE,
+  pagada BOOLEAN DEFAULT FALSE,
+  FOREIGN KEY (venta_id) REFERENCES ventas(id)
+);
+
+-- Finanzas
+CREATE TABLE finanzas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tipo ENUM('Ingreso', 'Gasto'),
+  descripcion VARCHAR(255),
+  monto DECIMAL(10,2),
+  monto_liberado DECIMAL(10,2) DEFAULT 0,
+  fecha DATETIME NOT NULL,
+  es_reserva BOOLEAN DEFAULT 0,
+  categoria VARCHAR(100),
+  entidad VARCHAR(100),
+  concepto VARCHAR(150),
+  caja_tipo VARCHAR(20),
+  usuario_id INT,
+  liberada DATETIME DEFAULT NULL
+);
+
+-- Pagos a empleados
+CREATE TABLE empleados_pagos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  empleado_id INT,
+  monto DECIMAL(10,2),
+  concepto VARCHAR(100),
+  fecha DATE,
+  descripcion VARCHAR(255),
+  FOREIGN KEY (empleado_id) REFERENCES usuarios(id)
+);
+
+-- Pedidos a proveedores
+CREATE TABLE pedidos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  proveedor_id INT,
+  fecha DATE,
+  total DECIMAL(10,2),
+  estado ENUM('Pendiente', 'Recibido', 'Pagado') DEFAULT 'Pendiente',
+  FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
+);
+
+-- Pagos a proveedores
+CREATE TABLE proveedores_pagos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  proveedor_id INT,
+  monto DECIMAL(10,2),
+  fecha DATE DEFAULT CURRENT_DATE,
+  descripcion VARCHAR(255),
+  concepto VARCHAR(100),
+  FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
+);
+
+-- Categorías
+CREATE TABLE categorias (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(50) UNIQUE
+);
+
+-- Relación producto-categoría
+CREATE TABLE producto_categoria (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  producto_id INT,
+  categoria_id INT,
+  FOREIGN KEY (producto_id) REFERENCES productos(id),
+  FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+);
+
+-- Notas internas
+CREATE TABLE notas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  titulo VARCHAR(100),
+  contenido TEXT,
+  autor_id INT,
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (autor_id) REFERENCES usuarios(id)
+);
+
+-- Logs del sistema
+CREATE TABLE logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT,
+  accion VARCHAR(255),
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- Reportes generados
+CREATE TABLE reportes_generados (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tipo_reporte VARCHAR(100),
+  usuario_id INT,
+  fecha_generado DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- Descuentos
+CREATE TABLE descuentos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tipo ENUM('Producto', 'Categoría', 'Proveedor'),
+  ref_id INT,
+  porcentaje DECIMAL(5,2),
+  desde DATE,
+  hasta DATE
+);
+
+-- Configuraciones del sistema
+CREATE TABLE configuraciones (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  clave VARCHAR(50) UNIQUE,
+  valor TEXT
+);
+
+-- Caja - aperturas
+CREATE TABLE caja_aperturas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  tipo_caja ENUM('fisica', 'virtual') NOT NULL,
+  monto_inicial DECIMAL(10,2) NOT NULL,
+  fecha_apertura DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- Caja - cierres
+CREATE TABLE caja_cierres (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  apertura_id INT NOT NULL,
+  usuario_id INT NOT NULL,
+  monto_final DECIMAL(10,2) NOT NULL,
+  fecha_cierre DATETIME DEFAULT CURRENT_TIMESTAMP,
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (apertura_id) REFERENCES caja_aperturas(id),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- Movimientos de caja
+CREATE TABLE movimientos_caja (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  venta_id INT,
+  tipo ENUM('ingreso', 'egreso') NOT NULL,
+  descripcion VARCHAR(255),
+  monto DECIMAL(10,2) NOT NULL,
+  metodo_pago ENUM('efectivo', 'transferencia', 'debito', 'credito', 'mixto') NOT NULL,
+  caja_tipo ENUM('fisica', 'virtual') NOT NULL,
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+  usuario_id INT NOT NULL,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+  FOREIGN KEY (venta_id) REFERENCES ventas(id)
+);
+
+-- Otros pagos
+CREATE TABLE otros_pagos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  entidad VARCHAR(100),
+  concepto VARCHAR(100),
+  monto DECIMAL(12,2),
+  descripcion VARCHAR(255),
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Impuestos pagos
+CREATE TABLE impuestos_pagos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  entidad VARCHAR(100),
+  concepto VARCHAR(100),
+  monto DECIMAL(12,2),
+  descripcion VARCHAR(255),
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sesiones empleados
+CREATE TABLE sesiones_empleados (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  fecha_hora_inicio DATETIME NOT NULL,
+  fecha_hora_cierre DATETIME,
+  ip VARCHAR(45),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+ALTER TABLE variantes
+ADD CONSTRAINT chk_stock_positivo CHECK (stock >= 0);
+
+UPDATE variantes SET stock = 0 WHERE stock < 0;
+
+SELECT v.*, p.nombre, p.imagen
+FROM variantes v
+JOIN productos p ON v.producto_id = p.id
+WHERE v.activo = 1;
+
+
+ALTER TABLE movimientos_caja MODIFY COLUMN venta_id INT NULL;
+
+ALTER TABLE movimientos_caja
+MODIFY COLUMN venta_id INT NULL;
+
+
+SELECT * FROM movimientos_caja
+ORDER BY id DESC
+LIMIT 10;
+
+
+SELECT id, tipo, categoria, monto, caja_tipo, es_reserva, liberada 
+FROM finanzas 
+WHERE es_reserva = 1;
+
+
+SELECT * FROM movimientos_caja
+WHERE caja_tipo = 'fisica'
+ORDER BY fecha DESC
+LIMIT 10;
+
+DELETE FROM movimientos_caja WHERE descripcion LIKE '%reserva%';
+DELETE FROM finanzas WHERE es_reserva = 1;
+
+SELECT * FROM movimientos_caja WHERE caja_tipo = 'fisica';

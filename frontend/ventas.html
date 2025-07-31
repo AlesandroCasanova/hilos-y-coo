@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ventas | Hilos y Coo</title>
+  <link rel="stylesheet" href="css/ventas.css" />
+</head>
+<body>
+  <header>
+    <h1>Gestión de Ventas</h1>
+    <button onclick="cerrarSesion()">Cerrar sesión</button>
+  </header>
+
+  <main>
+    <section class="carrito-section">
+      <h2>Carrito actual</h2>
+      <div id="carrito-vacio" style="display: none; color: #666; margin-bottom: 1rem;">El carrito está vacío.</div>
+      <table id="tabla-carrito">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Talle</th>
+            <th>Color</th>
+            <th>Precio unitario</th>
+            <th>Cantidad</th>
+            <th>Subtotal</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" style="text-align:right;"><b>Total:</b></td>
+            <td colspan="2" id="totalCarrito"></td>
+          </tr>
+        </tfoot>
+      </table>
+      <button id="btnConfirmarVenta" style="margin-top: 1rem;">Confirmar venta</button>
+    </section>
+
+    <section>
+      <h2>Historial de ventas</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Empleado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-historial-ventas"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script type="module" src="js/ventas.js"></script>
+</body>
+</html>

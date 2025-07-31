@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestión de Pagos - Hilos y Coo</title>
+  <link rel="stylesheet" href="css/pagos.css" />
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+    <h2>Hilos y Coo</h2>
+    <ul>
+      <li><a href="dashboard.html"><span class="icon">📊</span><span>Dashboard</span></a></li>
+      <li><a href="productos.html"><span class="icon">🧵</span><span>Productos</span></a></li>
+      <li><a href="inventario.html"><span class="icon">📦</span><span>Inventario</span></a></li>
+      <li><a href="ventas.html"><span class="icon">💸</span><span>Ventas</span></a></li>
+      <li><a href="proveedores.html"><span class="icon">🚚</span><span>Proveedores</span></a></li>
+      <li><a href="usuarios.html"><span class="icon">👥</span><span>Empleados</span></a></li>
+      <li><a href="pagos.html" class="active"><span class="icon">💰</span><span>Pagos</span></a></li>
+      <li><a href="finanzas.html"><span class="icon">📈</span><span>Finanzas</span></a></li>
+      <li><a href="pedidos.html"><span class="icon">📥</span><span>Pedidos</span></a></li>
+      <li><a href="index.html" onclick="localStorage.clear()"><span class="icon">🚪</span><span>Salir</span></a></li>
+    </ul>
+  </div>
+
+  <div class="contenido">
+    <h1>Registro de Pagos</h1>
+    <div class="main-grid">
+      
+      <!-- PAGO A EMPLEADO -->
+      <form id="formEmpleado">
+        <h2>Pago a Empleado</h2>
+        <label>Empleado:</label>
+        <select id="empleado" required></select>
+
+        <label>Concepto:</label>
+        <input type="text" id="conceptoEmpleado" placeholder="Ej: Sueldo, Extra" required />
+
+        <label>Monto:</label>
+        <input type="number" id="montoEmpleado" step="0.01" required />
+
+        <label>Descripción:</label>
+        <input type="text" id="descripcionEmpleado" placeholder="Motivo del pago" required />
+
+        <label>Método de Pago:</label>
+        <select id="cajaEmpleado" required>
+          <option value="" disabled selected>Seleccionar caja</option>
+          <option value="fisica">Caja Física</option>
+          <option value="virtual">Caja Virtual</option>
+        </select>
+
+        <button type="submit">Registrar Pago</button>
+      </form>
+
+      <!-- PAGO A PROVEEDOR -->
+      <form id="formProveedor">
+        <h2>Pago a Proveedor</h2>
+        <label>Proveedor:</label>
+        <select id="proveedor" required></select>
+
+        <label>Concepto:</label>
+        <input type="text" id="conceptoProveedor" placeholder="Ej: Pago mercadería" required />
+
+        <label>Monto:</label>
+        <input type="number" id="montoProveedor" step="0.01" required />
+
+        <label>Descripción:</label>
+        <input type="text" id="descripcionProveedor" placeholder="Motivo del pago" required />
+
+        <label>Método de Pago:</label>
+        <select id="cajaProveedor" required>
+          <option value="" disabled selected>Seleccionar caja</option>
+          <option value="fisica">Caja Física</option>
+          <option value="virtual">Caja Virtual</option>
+        </select>
+
+        <button type="submit">Registrar Pago</button>
+      </form>
+
+      <!-- PAGO DE IMPUESTO -->
+      <form id="formImpuesto">
+        <h2>Pago de Impuesto</h2>
+        <label>Entidad:</label>
+        <input type="text" id="entidadImpuesto" placeholder="Ej: AFIP, ARBA" required />
+
+        <label>Concepto:</label>
+        <input type="text" id="conceptoImpuesto" placeholder="Ej: Monotributo" required />
+
+        <label>Monto:</label>
+        <input type="number" id="montoImpuesto" step="0.01" required />
+
+        <label>Descripción:</label>
+        <input type="text" id="descripcionImpuesto" placeholder="Motivo del pago" required />
+
+        <label>Método de Pago:</label>
+        <select id="cajaImpuesto" required>
+          <option value="" disabled selected>Seleccionar caja</option>
+          <option value="fisica">Caja Física</option>
+          <option value="virtual">Caja Virtual</option>
+        </select>
+
+        <button type="submit">Registrar Pago</button>
+      </form>
+
+      <!-- OTRO EGRESO -->
+      <form id="formOtroPago">
+        <h2>Otro Egreso</h2>
+        <label>Entidad:</label>
+        <input type="text" id="entidadOtro" placeholder="Ej: Caja, Alquiler" required />
+
+        <label>Concepto:</label>
+        <input type="text" id="conceptoOtro" placeholder="Ej: Alquiler, Varios" required />
+
+        <label>Monto:</label>
+        <input type="number" id="montoOtro" step="0.01" required />
+
+        <label>Descripción:</label>
+        <input type="text" id="descripcionOtro" placeholder="Motivo del pago" required />
+
+        <label>Método de Pago:</label>
+        <select id="cajaOtro" required>
+          <option value="" disabled selected>Seleccionar caja</option>
+          <option value="fisica">Caja Física</option>
+          <option value="virtual">Caja Virtual</option>
+        </select>
+
+        <button type="submit">Registrar Egreso</button>
+      </form>
+    </div>
+
+    <div class="tablas">
+      <div>
+        <h2>Pagos a Empleados</h2>
+        <table id="tablaEmpleados">
+          <thead>
+            <tr><th>ID</th><th>Empleado</th><th>Entidad</th><th>Concepto</th><th>Monto</th><th>Fecha</th><th>Descripción</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div>
+        <h2>Pagos a Proveedores</h2>
+        <table id="tablaProveedores">
+          <thead>
+            <tr><th>ID</th><th>Proveedor</th><th>Entidad</th><th>Concepto</th><th>Monto</th><th>Fecha</th><th>Descripción</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div>
+        <h2>Pagos de Impuestos</h2>
+        <table id="tablaImpuestos">
+          <thead>
+            <tr><th>ID</th><th>Entidad</th><th>Concepto</th><th>Monto</th><th>Fecha</th><th>Descripción</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div>
+        <h2>Otros Egresos</h2>
+        <table id="tablaOtros">
+          <thead>
+            <tr><th>ID</th><th>Entidad</th><th>Concepto</th><th>Monto</th><th>Fecha</th><th>Descripción</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/pagos.js"></script>
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+    }
+  </script>
+</body>
+</html>

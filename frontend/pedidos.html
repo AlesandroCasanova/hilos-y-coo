@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pedidos a Proveedores | Hilos y Coo</title>
+  <link rel="stylesheet" href="css/pedidos.css">
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Hilos y Coo</h2>
+    <ul>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="pedidos.html" class="active">Pedidos a Proveedores</a></li>
+      <li><a href="index.html" onclick="localStorage.clear()">Salir</a></li>
+    </ul>
+  </div>
+
+  <main class="contenido">
+    <h1>Registrar nuevo pedido a proveedor</h1>
+    <form id="form-pedido" enctype="multipart/form-data">
+      <label for="proveedor">Proveedor:</label>
+      <select id="proveedor" name="proveedor_id" required></select>
+
+      <label for="fecha">Fecha del pedido:</label>
+      <input type="date" id="fecha_pedido" name="fecha_pedido" required>
+
+      <label for="monto">Monto total ($):</label>
+      <input type="number" id="monto" name="monto_total" min="1" required>
+
+      <label for="archivo">Comprobante (imagen o PDF):</label>
+      <input type="file" id="archivo" name="archivo" accept=".jpg,.jpeg,.png,.pdf">
+
+      <label for="observaciones">Observaciones:</label>
+      <textarea id="observaciones" name="observaciones" rows="2"></textarea>
+
+      <button type="submit">Registrar pedido</button>
+    </form>
+
+    <hr />
+
+    <h2>Pedidos registrados</h2>
+    <div id="resumen-general">
+      <p><strong>Deuda total pendiente:</strong> $<span id="total-deuda">0.00</span></p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Proveedor</th>
+          <th>Fecha</th>
+          <th>Monto</th>
+          <th>Pagado</th>
+          <th>Falta</th>
+          <th>Venc. 1</th>
+          <th>Días faltan</th>
+          <th>Venc. 2</th>
+          <th>Días faltan</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-pedidos">
+        <!-- Cargado dinámicamente -->
+      </tbody>
+    </table>
+  </main>
+
+  <script type="module" src="js/pedidos.js"></script>
+
+  <!-- Modal de pago -->
+  <div id="modal-pago" class="modal" style="display:none;">
+    <div class="modal-contenido">
+      <h2>Registrar pago</h2>
+      <form id="form-pago">
+        <input type="hidden" id="pedido_id" />
+        
+        <label>Monto a pagar:</label>
+        <input type="number" id="monto_total_pago" min="0" required />
+
+        <label>Elegí forma de pago:</label>
+        <select id="fuentes_pago" multiple size="4" required>
+          <option value="caja_fisica">Caja física</option>
+          <option value="caja_virtual">Caja virtual</option>
+          <option value="reserva_fisica">Reserva física</option>
+          <option value="reserva_virtual">Reserva virtual</option>
+        </select>
+
+        <div id="distribucion" style="margin-top:15px;"></div>
+
+        <button type="submit">Confirmar pago</button>
+        <button type="button" onclick="cerrarModal()">Cancelar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de historial -->
+  <div id="modal-historial" class="modal" style="display:none;">
+    <div class="modal-contenido">
+      <h2>Historial de pagos</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>Fuente</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-historial">
+          <!-- Dinámico -->
+        </tbody>
+      </table>
+      <button onclick="cerrarModalHistorial()">Cerrar</button>
+    </div>
+  </div>
+</body>
+</html>

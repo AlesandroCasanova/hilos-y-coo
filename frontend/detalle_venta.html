@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Detalle de Venta</title>
+  <link rel="stylesheet" href="css/detalle_venta.css" />
+</head>
+<body>
+  <header>
+    <span>Detalle de Venta</span>
+  </header>
+
+  <div class="main-card" id="detalleVentaCard">
+    <div class="volver-wrapper">
+      <button class="btn-volver" onclick="window.history.back()">← Volver</button>
+    </div>
+    
+    <div class="venta-titulo" id="ventaTitulo">Venta #</div>
+    <div class="venta-datos">
+      <div><b>Fecha:</b> <span id="ventaFecha"></span></div>
+      <div><b>Empleado:</b> <span id="ventaEmpleado"></span></div>
+      <div class="venta-total"><b>Total:</b> $<span id="ventaTotal"></span></div>
+    </div>
+
+    <table class="venta-tabla">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Talle</th>
+          <th>Color</th>
+          <th>Cantidad</th>
+          <th>Precio unitario</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody id="detalleVentaBody">
+        <!-- Las filas se cargan dinámicamente por JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module" src="js/detalle_venta.js"></script>
+</body>
+</html>

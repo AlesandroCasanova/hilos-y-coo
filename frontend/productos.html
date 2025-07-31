@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Productos | Hilos y Coo</title>
+  <link rel="stylesheet" href="css/productos.css" />
+</head>
+<body>
+  <header>
+    <h1>Gestión de Productos</h1>
+    <button onclick="abrirModalCategoria()">+ Nueva categoría</button>
+    <button onclick="cerrarSesion()">Cerrar sesión</button>
+
+  </header>
+
+  <main>
+    <!-- Formulario para agregar producto -->
+    <section id="formulario-producto">
+      <h2>Agregar Producto</h2>
+      <form id="formProducto" enctype="multipart/form-data">
+        <input type="text" id="nombre" placeholder="Nombre" required />
+        <input type="text" id="descripcion" placeholder="Descripción" required />
+        <input type="text" id="codigo" placeholder="Código interno" required />
+
+        <select id="categoria" required>
+          <option value="">Seleccione una categoría</option>
+        </select>
+
+        <select id="proveedor" required>
+          <option value="">Seleccione un proveedor</option>
+        </select>
+
+        <input type="number" id="precio_proveedor" placeholder="Precio del proveedor $" step="0.01" required />
+        <p id="precio_sugerido">Precio sugerido: $0.00</p>
+        <input type="number" id="precio" placeholder="Precio final al público $" step="0.01" required />
+
+        <input type="file" id="imagen" accept="image/*" />
+        <button type="submit">Guardar</button>
+      </form>
+    </section>
+
+    <!-- Formulario para editar producto -->
+    <section id="formulario-edicion" style="display: none;">
+      <h2>Editar Producto</h2>
+      <form id="formEditarProducto" enctype="multipart/form-data">
+        <input type="hidden" id="edit-id" />
+        <input type="text" id="edit-nombre" placeholder="Nombre" required />
+        <input type="text" id="edit-descripcion" placeholder="Descripción" required />
+        <input type="text" id="edit-codigo" placeholder="Código interno" required />
+
+        <select id="edit-categoria" required>
+          <option value="">Seleccione una categoría</option>
+        </select>
+
+        <select id="edit-proveedor" required>
+          <option value="">Seleccione un proveedor</option>
+        </select>
+
+        <input type="number" id="edit-precio_proveedor" placeholder="Precio del proveedor $" step="0.01" required />
+        <p id="edit-precio_sugerido">Precio sugerido: $0.00</p>
+        <input type="number" id="edit-precio" placeholder="Precio final al público $" step="0.01" required />
+
+        <label>Cambiar imagen:</label>
+        <input type="file" id="edit-imagen" accept="image/*" />
+        <button type="submit">Actualizar</button>
+        <button type="button" onclick="cancelarEdicion()">Cancelar</button>
+      </form>
+    </section>
+
+    <!-- Filtros -->
+    <section id="filtros-productos">
+      <h2>Filtrar productos</h2>
+      <div class="filtros-contenedor">
+        <select id="filtro-categoria">
+          <option value="">Todas las categorías</option>
+        </select>
+
+        <select id="filtro-proveedor">
+          <option value="">Todos los proveedores</option>
+        </select>
+
+        <button onclick="aplicarFiltros()">Aplicar</button>
+        <button onclick="limpiarFiltros()">Limpiar</button>
+      </div>
+    </section>
+
+    <!-- Listado de productos -->
+    <section id="lista-productos">
+      <h2>Productos existentes</h2>
+      <div id="productos"></div>
+    </section>
+
+    <!-- Tabla administrativa -->
+    <section id="tabla-productos">
+      <h2>Tabla de productos</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Código</th>
+            <th>Categoría</th>
+            <th>Proveedor</th>
+            <th>Precio</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body">
+          <!-- filas dinámicas -->
+        </tbody>
+      </table>
+    </section>
+    <!-- Modal de nueva categoría -->
+<div id="modal-categoria">
+  <form id="formCategoria">
+    <button type="button" onclick="cerrarModalCategoria()">✕</button>
+    <h3>Nueva categoría</h3>
+    <input type="text" id="nombreCategoria" placeholder="Nombre de categoría" required />
+    <button type="submit">Guardar</button>
+  </form>
+</div>
+
+  </main>
+
+  <script type="module" src="js/productos.js"></script>
+</body>
+</html>

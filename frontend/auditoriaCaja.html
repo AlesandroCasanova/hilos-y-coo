@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Auditoría de Caja | Hilos y Coo</title>
+  <link rel="stylesheet" href="css/caja.css" />
+</head>
+<body>
+  <div class="sidebar" id="sidebar">
+    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+    <h2>Hilos y Coo</h2>
+    <ul>
+      <li><a href="dashboard.html">Dashboard general</a></li>
+      <li><a href="caja.html">Caja</a></li>
+      <li><a href="auditoriaCaja.html" class="active">Auditoría de Caja</a></li>
+      <li><a href="finanzas.html">Finanzas</a></li>
+      <li><a href="index.html" onclick="localStorage.clear()">Salir</a></li>
+    </ul>
+  </div>
+  <main class="contenido">
+    <h1>Auditoría de Caja</h1>
+    <section class="filtros">
+      <label>Desde: <input type="date" id="filtro-desde"></label>
+      <label>Hasta: <input type="date" id="filtro-hasta"></label>
+      <label>Caja:
+        <select id="filtro-caja">
+          <option value="">Ambas</option>
+          <option value="fisica">Física</option>
+          <option value="virtual">Virtual</option>
+        </select>
+      </label>
+      <label>Tipo:
+        <select id="filtro-tipo">
+          <option value="">Todos</option>
+          <option value="cierre">Cierre</option>
+          <option value="intermedio">Intermedio</option>
+        </select>
+      </label>
+      <button onclick="cargarArqueos()">Filtrar</button>
+    </section>
+    <section class="tabla">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Caja</th>
+            <th>Tipo</th>
+            <th>Usuario</th>
+            <th>Saldo teórico</th>
+            <th>Saldo contado</th>
+            <th>Diferencia</th>
+            <th>Observaciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-arqueos"></tbody>
+      </table>
+    </section>
+  </main>
+  <script type="module" src="js/auditoriaCaja.js"></script>
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+    }
+  </script>
+</body>
+</html>

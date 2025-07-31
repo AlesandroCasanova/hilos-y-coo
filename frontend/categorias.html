@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Categorías | Hilos y Coo</title>
+  <link rel="stylesheet" href="css/productos.css" />
+</head>
+<body>
+  <header>
+    <h1>Gestión de Categorías</h1>
+    <button onclick="cerrarSesion()">Cerrar sesión</button>
+  </header>
+
+  <main>
+    <section>
+      <h2>Agregar / Editar Categoría</h2>
+      <form id="formCategoria">
+        <input type="hidden" id="idCategoria" />
+        <input type="text" id="nombreCategoria" placeholder="Nombre de la categoría" required />
+        <button type="submit">Agregar</button>
+        <button type="button" id="btnCancelarEdicion" style="display:none;">Cancelar</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Categorías existentes</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-categorias"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script type="module" src="js/categorias.js"></script>
+</body>
+</html>

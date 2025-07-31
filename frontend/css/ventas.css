@@ -1,0 +1,128 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f6f8fa;
+  color: #222;
+}
+
+header {
+  background: #232d4d;
+  color: #fff;
+  padding: 1.5rem 2rem 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+header button {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background .2s;
+}
+header button:hover {
+  background: #115293;
+}
+
+main {
+  padding: 2rem 0.5rem 3rem 0.5rem;
+  max-width: 950px;
+  margin: auto;
+}
+
+section {
+  margin-bottom: 2.5rem;
+}
+
+h2 {
+  margin-bottom: 1.2rem;
+  color: #232d4d;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 1rem;
+  background: #fff;
+  box-shadow: 0 2px 12px #0001;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+thead tr {
+  background: #e9eef6;
+}
+
+th, td {
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+}
+
+th {
+  font-weight: 600;
+  color: #232d4d;
+  border-bottom: 2px solid #e0e3e8;
+}
+
+tbody tr:not(:last-child) td {
+  border-bottom: 1px solid #ececec;
+}
+
+tfoot td {
+  font-weight: bold;
+  background: #f4f8fb;
+  color: #1976d2;
+}
+
+td input[type="number"] {
+  width: 60px;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid #b0bec5;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+button,
+input[type="button"] {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  padding: 0.45rem 1.2rem;
+  border-radius: 5px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.18s;
+  margin: 0.12rem 0.12rem;
+}
+
+button:hover,
+input[type="button"]:hover {
+  background: #115293;
+}
+
+#carrito-vacio {
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 800px) {
+  main {
+    padding: 1rem 0.2rem;
+  }
+  table, thead, tbody, th, td, tr {
+    font-size: 0.96rem;
+  }
+}

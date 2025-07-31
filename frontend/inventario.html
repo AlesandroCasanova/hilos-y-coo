@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventario - Hilos y Coo</title>
+  <link rel="stylesheet" href="css/inventario.css" />
+</head>
+<body>
+  <div class="sidebar" id="sidebar">
+    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+    <h2>Hilos y Coo</h2>
+    <ul>
+      <li><a href="dashboard.html">📊 Dashboard</a></li>
+      <li><a href="productos.html">🧵 Productos</a></li>
+      <li><a href="inventario.html">📦 Inventario</a></li>
+      <li><a href="ventas.html">💸 Ventas</a></li>
+      <li><a href="proveedores.html">🚚 Proveedores</a></li>
+      <li><a href="usuarios.html">👥 Empleados</a></li>
+      <li><a href="pagos.html">💰 Pagos</a></li>
+      <li><a href="impuestos.html">🧾 Impuestos</a></li>
+      <li><a href="finanzas.html">📈 Finanzas</a></li>
+      <li><a href="pedidos.html">📥 Pedidos</a></li>
+      <li><a href="index.html" onclick="localStorage.clear()">🚪 Salir</a></li>
+    </ul>
+  </div>
+
+  <div class="contenido">
+    <h1>Inventario</h1>
+    <table id="tablaInventario">
+      <thead>
+        <tr>
+          <th>Imagen</th>
+          <th>Producto</th>
+          <th>Talle</th>
+          <th>Color</th>
+          <th>Stock</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+    }
+  </script>
+  <script type="module" src="js/inventario.js"></script>
+</body>
+</html>

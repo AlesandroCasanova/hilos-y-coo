@@ -1,0 +1,286 @@
+/* Reset básico */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+  background-color: #1c4ed8;
+  color: white;
+  width: 220px;
+  height: 100vh;
+  position: fixed;
+  transition: width 0.3s ease;
+  overflow: hidden;
+  padding-top: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+}
+
+/* Toggle button */
+.toggle-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  margin-bottom: 15px;
+  align-self: flex-start;
+  margin-left: 15px;
+  transition: margin-left 0.3s ease;
+}
+
+/* Sidebar collapsed */
+.sidebar.collapsed {
+  width: 60px;
+}
+
+/* Ocultar título cuando está minimizado */
+.sidebar.collapsed h2 {
+  opacity: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  transition: opacity 0.3s ease;
+}
+
+/* Lista menú */
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+}
+
+.sidebar ul li {
+  width: 100%;
+  position: relative;
+}
+
+.sidebar ul li a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  white-space: nowrap;
+  transition: background-color 0.3s ease, padding 0.3s ease;
+  position: relative;
+  user-select: none;
+}
+
+/* Hover efecto */
+.sidebar ul li a:hover {
+  background-color: #374eb8;
+  border-radius: 8px;
+}
+
+/* Cuando está minimizada solo mostrar icono centrado */
+.sidebar.collapsed ul li a {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Ocultar texto dejando solo icono */
+.sidebar.collapsed ul li a > span:not(.icon) {
+  display: none;
+}
+
+/* Mantener visible solo el icono */
+.sidebar ul li a > span.icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* Tooltip para iconos minimizados */
+.sidebar.collapsed ul li a::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  background: #333;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: #fff;
+  white-space: nowrap;
+  left: 70px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  font-size: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+}
+
+/* Mostrar tooltip al hover */
+.sidebar.collapsed ul li a:hover::after {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Ajuste toggle button margin en minimizado */
+.sidebar.collapsed .toggle-btn {
+  margin-left: 8px;
+}
+
+/* Contenido principal */
+.contenido {
+  margin-left: 240px;
+  padding: 20px 30px;
+  transition: margin-left 0.3s ease;
+  background: #f7f9ff;
+  min-height: 100vh;
+}
+
+/* Ajustar contenido cuando sidebar minimizado */
+.sidebar.collapsed ~ .contenido {
+  margin-left: 60px;
+}
+
+/* Grid para formularios */
+.main-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+/* Formularios */
+form {
+  background: white;
+  padding: 20px 25px;
+  border-radius: 12px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow 0.3s ease;
+}
+
+form:hover {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+form h2 {
+  margin-bottom: 12px;
+  color: #1c4ed8;
+}
+
+/* Labels */
+form label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #555;
+}
+
+/* Inputs y selects */
+input[type="text"],
+input[type="number"],
+select {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1.5px solid #ccc;
+  font-size: 15px;
+  transition: border-color 0.3s ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+  border-color: #1c4ed8;
+  outline: none;
+}
+
+/* Botones */
+button {
+  background-color: #1c4ed8;
+  color: white;
+  padding: 12px 0;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #3b60f4;
+}
+
+/* Tablas contenedores */
+.tablas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 25px;
+}
+
+/* Estilo tabla */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* Encabezado tabla */
+thead tr {
+  background-color: #1c4ed8;
+  color: white;
+  font-weight: 700;
+}
+
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 14px;
+  border-bottom: 1px solid #eaeaea;
+  word-break: break-word;
+}
+
+/* Filas alternadas */
+tbody tr:nth-child(even) {
+  background-color: #f4f7ff;
+}
+
+/* Scroll horizontal para tablas cuando son muy anchas */
+table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Scroll personalizado para tablas */
+table::-webkit-scrollbar {
+  height: 8px;
+}
+table::-webkit-scrollbar-thumb {
+  background: #1c4ed8;
+  border-radius: 6px;
+}
+table::-webkit-scrollbar-track {
+  background: #e1e7ff;
+  border-radius: 6px;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 600px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+  .tablas {
+    grid-template-columns: 1fr;
+  }
+}
