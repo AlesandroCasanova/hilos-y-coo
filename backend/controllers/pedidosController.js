@@ -2,6 +2,32 @@ const db = require('../models/db');
 const path = require('path');
 const fs = require('fs');
 
+/* ========================= Helpers ========================= */
+
+async function obtenerSaldoCaja(conn, cuenta) {
+  const [[row]] = await conn.query(
+    `SELECT COALESCE(SUM(signo * monto), 0) AS saldo
+     FROM movimientos_caja
+     WHERE cuenta = ?`,
+    [cuenta]
+  );
+  return Number(row?.saldo || 0);
+}
+
+async function obtenerReservasDisponibles(conn, tipo) {
+  const [[row]] = await conn.query(
+    `SELECT
+       COALESCE(SUM(CASE WHEN movimiento='alta'       THEN monto ELSE 0 END), 0) -
+       COALESCE(SUM(CASE WHEN movimiento='liberacion' THEN monto ELSE 0 END), 0) AS disponible
+     FROM movimientos_reserva
+     WHERE tipo = ?`,
+    [tipo]
+  );
+  return Number(row?.disponible || 0);
+}
+
+/* ========================= Pedidos ========================= */
+
 // --- Crear pedido con archivo adjunto ---
 exports.crearPedido = async (req, res) => {
   try {
@@ -46,7 +72,7 @@ exports.obtenerPedidos = async (req, res) => {
   }
 };
 
-// --- Registrar pago simple ---
+// --- Registrar pago simple (legacy compatible) ---
 exports.registrarPago = async (req, res) => {
   const { pedido_id, monto } = req.body;
   const fecha = new Date();
@@ -61,7 +87,6 @@ exports.registrarPago = async (req, res) => {
       `SELECT SUM(monto) AS total_pagado FROM pagos_pedidos WHERE pedido_id = ?`,
       [pedido_id]
     );
-
     const [[{ monto_total }]] = await db.query(
       `SELECT monto_total FROM pedidos WHERE id = ?`,
       [pedido_id]
@@ -71,10 +96,7 @@ exports.registrarPago = async (req, res) => {
     if (total_pagado >= monto_total) nuevoEstado = 'Pago completo';
     else if (total_pagado >= monto_total / 2) nuevoEstado = '1ra cuota pagada';
 
-    await db.query(
-      'UPDATE pedidos SET estado = ? WHERE id = ?',
-      [nuevoEstado, pedido_id]
-    );
+    await db.query('UPDATE pedidos SET estado = ? WHERE id = ?', [nuevoEstado, pedido_id]);
 
     res.json({ mensaje: 'Pago registrado' });
   } catch (error) {
@@ -83,131 +105,133 @@ exports.registrarPago = async (req, res) => {
   }
 };
 
-// --- Registrar pago detallado (con múltiples fuentes) ---
+// --- Registrar pago detallado (caja/reservas) ---
 exports.registrarPagoDetallado = async (req, res) => {
   const { pedido_id, monto_total, detalles } = req.body;
   const usuario_id = req.usuario.id;
-  const fecha = new Date();
 
+  if (!pedido_id || !monto_total || !detalles) {
+    return res.status(400).json({ mensaje: 'Faltan datos: pedido_id, monto_total y detalles son obligatorios.' });
+  }
+
+  // Validación: suma de detalles = monto_total (tolerancia centavos)
+  const sumDetalles = Object.values(detalles).reduce((acc, v) => acc + Number(v || 0), 0);
+  if (Math.abs(sumDetalles - Number(monto_total)) > 0.01) {
+    return res.status(400).json({ mensaje: 'La suma del desglose no coincide con el monto total.' });
+  }
+
+  const conn = await db.getConnection();
   try {
-    await db.query(
-      'INSERT INTO pagos_pedidos (pedido_id, monto, fecha) VALUES (?, ?, ?)',
-      [pedido_id, monto_total, fecha]
+    await conn.beginTransaction();
+
+    // 1) Registrar pago administrativo
+    await conn.query(
+      'INSERT INTO pagos_pedidos (pedido_id, monto, fecha) VALUES (?, ?, NOW())',
+      [pedido_id, Number(monto_total)]
     );
 
-    const [[{ total_pagado }]] = await db.query(
-      'SELECT SUM(monto) AS total_pagado FROM pagos_pedidos WHERE pedido_id = ?',
+    // 2) Por cada fuente, registrar movimiento correspondiente
+    // Caja física
+    if (detalles.caja_fisica && Number(detalles.caja_fisica) > 0) {
+      const monto = Number(detalles.caja_fisica);
+      const saldo = await obtenerSaldoCaja(conn, 'caja_fisica');
+      if (saldo < monto) {
+        throw new Error('Saldo insuficiente en caja física');
+      }
+
+      await conn.query(
+        `INSERT INTO movimientos_caja
+          (fecha, usuario_id, cuenta,     tipo,    signo, monto, referencia_tipo, referencia_id, descripcion)
+         VALUES
+          (NOW(), ?,        'caja_fisica','egreso',  -1,   ?,     'pago_pedido',  ?,             ?)`,
+        [usuario_id, monto, pedido_id, `Pago pedido #${pedido_id} desde caja física`]
+      );
+    }
+
+    // Caja virtual
+    if (detalles.caja_virtual && Number(detalles.caja_virtual) > 0) {
+      const monto = Number(detalles.caja_virtual);
+      const saldo = await obtenerSaldoCaja(conn, 'caja_virtual');
+      if (saldo < monto) {
+        throw new Error('Saldo insuficiente en caja virtual');
+      }
+
+      await conn.query(
+        `INSERT INTO movimientos_caja
+          (fecha, usuario_id, cuenta,     tipo,    signo, monto, referencia_tipo, referencia_id, descripcion)
+         VALUES
+          (NOW(), ?,        'caja_virtual','egreso',  -1,   ?,     'pago_pedido',  ?,             ?)`,
+        [usuario_id, monto, pedido_id, `Pago pedido #${pedido_id} desde caja virtual`]
+      );
+    }
+
+    // Reserva física (liberación)
+    if (detalles.reserva_fisica && Number(detalles.reserva_fisica) > 0) {
+      const monto = Number(detalles.reserva_fisica);
+      const disponible = await obtenerReservasDisponibles(conn, 'fisica');
+      if (disponible < monto) {
+        throw new Error('Reserva física insuficiente');
+      }
+
+      await conn.query(
+        `INSERT INTO movimientos_reserva
+          (fecha, usuario_id, tipo,    movimiento,   monto, referencia_tipo, referencia_id, descripcion)
+         VALUES
+          (NOW(), ?,        'fisica', 'liberacion',  ?,     'pago_pedido',   ?,             ?)`,
+        [usuario_id, monto, pedido_id, `Pago pedido #${pedido_id} (liberación de reserva física)`]
+      );
+    }
+
+    // Reserva virtual (liberación)
+    if (detalles.reserva_virtual && Number(detalles.reserva_virtual) > 0) {
+      const monto = Number(detalles.reserva_virtual);
+      const disponible = await obtenerReservasDisponibles(conn, 'virtual');
+      if (disponible < monto) {
+        throw new Error('Reserva virtual insuficiente');
+      }
+
+      await conn.query(
+        `INSERT INTO movimientos_reserva
+          (fecha, usuario_id, tipo,     movimiento,   monto, referencia_tipo, referencia_id, descripcion)
+         VALUES
+          (NOW(), ?,        'virtual', 'liberacion',  ?,     'pago_pedido',   ?,             ?)`,
+        [usuario_id, monto, pedido_id, `Pago pedido #${pedido_id} (liberación de reserva virtual)`]
+      );
+    }
+
+    // 3) Actualizar estado del pedido
+    const [[{ total_pagado }]] = await conn.query(
+      `SELECT SUM(monto) AS total_pagado FROM pagos_pedidos WHERE pedido_id = ?`,
       [pedido_id]
     );
-    const [[{ monto_total: totalPedido }]] = await db.query(
-      'SELECT monto_total FROM pedidos WHERE id = ?',
+    const [[{ monto_total: totalPedido }]] = await conn.query(
+      `SELECT monto_total FROM pedidos WHERE id = ?`,
       [pedido_id]
     );
 
     let nuevoEstado = 'Pendiente';
-    if (total_pagado >= totalPedido) nuevoEstado = 'Pago completo';
-    else if (total_pagado >= totalPedido / 2) nuevoEstado = '1ra cuota pagada';
+    if (Number(total_pagado) >= Number(totalPedido)) nuevoEstado = 'Pago completo';
+    else if (Number(total_pagado) >= Number(totalPedido) / 2) nuevoEstado = '1ra cuota pagada';
 
-    await db.query(
-      'UPDATE pedidos SET estado = ? WHERE id = ?',
-      [nuevoEstado, pedido_id]
-    );
+    await conn.query('UPDATE pedidos SET estado = ? WHERE id = ?', [nuevoEstado, pedido_id]);
 
-    for (const fuente in detalles) {
-      const monto = detalles[fuente];
-      const metodo = fuente.includes('fisica') ? 'efectivo' : 'transferencia';
-      const caja = fuente.includes('fisica') ? 'fisica' : 'virtual';
-
-      const [[{ saldoDisponible }]] = await db.query(`
-        SELECT 
-          SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) -
-          SUM(CASE WHEN tipo = 'egreso' THEN monto ELSE 0 END) AS saldoDisponible
-        FROM movimientos_caja
-        WHERE caja_tipo = ?
-      `, [caja]);
-
-      if (fuente.startsWith('reserva')) {
-        const [[{ totalReservas }]] = await db.query(`
-          SELECT SUM(monto - IFNULL(monto_liberado, 0)) AS totalReservas
-          FROM finanzas
-          WHERE es_reserva = 1 AND liberada = 0 AND caja_tipo = ?
-        `, [caja]);
-
-        if ((totalReservas || 0) < monto) {
-          return res.status(400).json({ mensaje: `Saldo insuficiente en ${fuente}` });
-        }
-      } else {
-        if ((saldoDisponible || 0) < monto) {
-          return res.status(400).json({ mensaje: `Saldo insuficiente en ${fuente}` });
-        }
-      }
-
-      await db.query(`
-        INSERT INTO finanzas (tipo, categoria, entidad, concepto, descripcion, monto, fecha, caja_tipo, usuario_id, es_reserva)
-        VALUES ('Gasto', 'Pago pedido', 'Proveedor', 'Pago parcial', ?, ?, ?, ?, ?, 0)
-      `, [`Pago de pedido #${pedido_id} desde ${fuente}`, monto, fecha, caja, usuario_id]);
-
-      await db.query(`
-        INSERT INTO movimientos_caja (tipo, descripcion, monto, metodo_pago, caja_tipo, usuario_id, fecha)
-        VALUES ('egreso', ?, ?, ?, ?, ?, ?)
-      `, [`Pago de pedido #${pedido_id} desde ${fuente}`, monto, metodo, caja, usuario_id, fecha]);
-
-      if (fuente.startsWith('reserva')) {
-        const [reservas] = await db.query(`
-          SELECT id, monto, IFNULL(monto_liberado, 0) AS monto_liberado
-          FROM finanzas
-          WHERE es_reserva = 1 AND liberada = 0 AND caja_tipo = ?
-          ORDER BY fecha ASC
-        `, [caja]);
-
-        let restante = monto;
-        for (const r of reservas) {
-          const disponible = r.monto - r.monto_liberado;
-          if (disponible <= 0) continue;
-
-          const aplicar = Math.min(disponible, restante);
-          await db.query(
-            'UPDATE finanzas SET monto_liberado = monto_liberado + ? WHERE id = ?',
-            [aplicar, r.id]
-          );
-          restante -= aplicar;
-          if (restante <= 0) break;
-        }
-      }
-    }
-
+    await conn.commit();
     res.json({ mensaje: 'Pago detallado registrado correctamente' });
   } catch (error) {
+    await conn.rollback();
     console.error('Error en pago detallado:', error);
-    res.status(500).json({ mensaje: 'Error al registrar pago' });
-  }
-};
-
-// --- Obtener historial de pagos de un pedido ---
-exports.obtenerHistorialPagos = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const [pagos] = await db.query(`
-      SELECT id, monto, DATE_FORMAT(fecha, '%d/%m/%Y %H:%i') AS fecha
-      FROM pagos_pedidos
-      WHERE pedido_id = ?
-      ORDER BY fecha ASC
-    `, [id]);
-
-    res.json(pagos);
-  } catch (error) {
-    console.error('Error al obtener historial de pagos:', error);
-    res.status(500).json({ mensaje: 'Error al obtener historial de pagos' });
+    res.status(500).json({ mensaje: 'Error al registrar pago', error: error.sqlMessage || error.message });
+  } finally {
+    conn.release();
   }
 };
 
 // --- Obtener historial de pagos de un pedido ---
 exports.obtenerHistorialPagos = async (req, res) => {
   const pedido_id = req.params.id;
-
   try {
     const [historial] = await db.query(`
-      SELECT fecha, monto, 'Pago de pedido' AS descripcion
+      SELECT fecha, monto
       FROM pagos_pedidos
       WHERE pedido_id = ?
       ORDER BY fecha ASC

@@ -7,36 +7,53 @@
   <link rel="stylesheet" href="css/dashboard.css" />
 </head>
 <body>
-  <header>
-    <h1>Bienvenido a Hilos y Coo</h1>
-    <div id="estado-caja">
-      <span id="estado-texto">Verificando caja...</span>
-      <button id="btn-abrir-caja" class="verde oculto">Abrir Caja</button>
-      <button id="btn-cerrar-caja" class="rojo oculto">Cerrar Caja</button>
+  <header class="topbar">
+    <h1>Hilos y Coo</h1>
+
+    <div class="estado-caja">
+      <span id="estado-texto">Verificando caja física...</span>
+      <button id="btn-abrir-caja" class="oculto">Abrir caja</button>
+      <button id="btn-cerrar-caja" class="oculto">Cerrar caja</button>
+      <span id="saldos">
+        Física: <b id="saldo-fisica">0,00</b> |
+        Virtual: <b id="saldo-virtual">0,00</b> |
+        Total: <b id="saldo-total">0,00</b>
+      </span>
     </div>
-    <div id="resumen-cajas" class="oculto">
-      💵 Físico: <span id="dinero-fisico">$0.00</span> |
-      🏦 Virtual: <span id="dinero-virtual">$0.00</span>
-    </div>
-    <button id="logoutBtn">Cerrar sesión</button>
+
+    <button id="btn-logout" class="btn-logout">Salir</button>
   </header>
 
-  <main id="dashboardContent"></main>
+  <main>
+    <div class="menu-grid">
+      <a href="productos.html" class="menu-btn">Productos</a>
+      <a href="inventario.html" class="menu-btn">Inventario</a>
+      <a href="ventas.html" class="menu-btn">Ventas</a>
+      <a href="carrito.html" class="menu-btn">Carrito</a>
+      <a href="caja.html" class="menu-btn">Caja (diario)</a>
+      <a href="finanzas.html" class="menu-btn">Finanzas</a>
+      <a href="proveedores.html" class="menu-btn">Proveedores</a>
+      <a href="empleados.html" class="menu-btn">Empleados</a>
+      <a href="pedidos.html" class="menu-btn">Pedidos a Proveedores</a>
+      <a href="pagos.html" class="menu-btn">Pagos</a>
+      <a href="catalogo.html" class="menu-btn">Catálogo</a>
+    </div>
+  </main>
 
-  <!-- Modal para cierre de caja -->
-  <div id="modalCierre" class="modal">
-    <div class="modal-content">
-      <h3>Arqueo y Cierre de Caja</h3>
-      <label for="montoFinalInput">Monto final contado en caja:</label>
-      <input type="number" id="montoFinalInput" placeholder="Ej: 23500.00" step="0.01" />
-      <div class="modal-buttons">
-        <button id="btnConfirmarCierre">Confirmar</button>
-        <button id="btnCancelarCierre">Cancelar</button>
+  <!-- Modal Cerrar Caja -->
+  <div id="modal-cerrar" class="modal oculto">
+    <div class="modal-contenido">
+      <h3>Cerrar caja física</h3>
+      <label for="monto-final">Monto final a dejar en caja</label>
+      <input type="number" id="monto-final" min="0" step="0.01" />
+      <div class="acciones">
+        <button id="confirmar-cierre">Confirmar</button>
+        <button id="cancelar-cierre">Cancelar</button>
       </div>
     </div>
   </div>
-  
 
-  <script type="module" src="js/dashboard.js"></script>
+  <!-- Importá SOLO este JS (sin utils.js) -->
+  <script src="js/dashboard.js"></script>
 </body>
 </html>
