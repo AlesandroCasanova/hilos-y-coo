@@ -1,6 +1,35 @@
 const db = require('../models/db');
 
-// --- LO TUYO ARRANCA ACÁ ---
+/**
+ * Registra un movimiento en movimientos_caja por cada pago recibido.
+ * Mapea método → cuenta:
+ *  - efectivo  -> caja_fisica
+ *  - (transferencia|debito|credito) -> caja_virtual
+ *
+ * Se ejecuta sobre la misma conexión de la transacción.
+ */
+async function registrarMovimientosCajaPorPagos(conn, ventaId, pagos, usuarioId) {
+  if (!Array.isArray(pagos)) return;
+
+  for (const p of pagos) {
+    const metodo = String(p.metodo || '').toLowerCase(); // 'efectivo'|'transferencia'|'debito'|'credito'
+    const monto = Number(p.monto || 0);
+    if (!monto || monto <= 0) continue;
+
+    const cuenta = (metodo === 'efectivo') ? 'caja_fisica' : 'caja_virtual';
+
+    await conn.query(
+      `INSERT INTO movimientos_caja
+        (fecha, usuario_id, cuenta,  tipo,     signo, monto, referencia_tipo, referencia_id, descripcion)
+       VALUES
+        (NOW(), ?,        ?,       'ingreso',  +1,    ?,     'venta',         ?,             ?)`,
+      [usuarioId || null, cuenta, monto, ventaId, `Venta ID ${ventaId} (${metodo})`]
+    );
+  }
+}
+
+/* ===================== CARRITO (BACKEND) ===================== */
+
 exports.agregarAlCarrito = async (req, res) => {
   const { usuario_id, variante_id, cantidad } = req.body;
   try {
@@ -51,19 +80,22 @@ exports.eliminarItemCarrito = async (req, res) => {
   }
 };
 
+/* ===================== VENTAS (FLUJO CARRITO EN BD) ===================== */
+
 exports.confirmarVenta = async (req, res) => {
-  const { usuario_id } = req.body;
+  const { usuario_id, pagos } = req.body; // pagos opcional en este flujo
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
 
     const [carrito] = await conn.query('SELECT * FROM carrito WHERE usuario_id = ?', [usuario_id]);
-
     if (carrito.length === 0) {
-      await conn.release();
+      await conn.rollback();
+      conn.release();
       return res.status(400).json({ mensaje: 'Carrito vacío' });
     }
 
+    // Calcular total leyendo precio actual
     let total = 0;
     for (const item of carrito) {
       const [[{ precio }]] = await conn.query(`
@@ -74,12 +106,14 @@ exports.confirmarVenta = async (req, res) => {
       total += precio * item.cantidad;
     }
 
+    // Crear venta
     const [venta] = await conn.query(
-      'INSERT INTO ventas (usuario_id, total) VALUES (?, ?)',
+      'INSERT INTO ventas (usuario_id, total, fecha) VALUES (?, ?, NOW())',
       [usuario_id, total]
     );
     const venta_id = venta.insertId;
 
+    // Detalle + stock + historial
     for (const item of carrito) {
       const [[{ precio }]] = await conn.query(`
         SELECT p.precio FROM productos p
@@ -87,27 +121,40 @@ exports.confirmarVenta = async (req, res) => {
         WHERE v.id = ?
       `, [item.variante_id]);
 
-      await conn.query(`
-        INSERT INTO detalle_venta (venta_id, variante_id, cantidad, precio_unitario)
-        VALUES (?, ?, ?, ?)`,
-        [venta_id, item.variante_id, item.cantidad, precio]);
+      await conn.query(
+        `INSERT INTO detalle_venta (venta_id, variante_id, cantidad, precio_unitario)
+         VALUES (?, ?, ?, ?)`,
+        [venta_id, item.variante_id, item.cantidad, precio]
+      );
 
-      await conn.query(`
-        UPDATE variantes SET stock = stock - ? WHERE id = ?`,
-        [item.cantidad, item.variante_id]);
+      await conn.query(
+        `UPDATE variantes SET stock = stock - ? WHERE id = ?`,
+        [item.cantidad, item.variante_id]
+      );
 
-      await conn.query(`
-        INSERT INTO historial_stock (variante_id, tipo_movimiento, cantidad, motivo)
-        VALUES (?, 'Egreso', ?, 'Venta')`,
-        [item.variante_id, item.cantidad]);
+      await conn.query(
+        `INSERT INTO historial_stock (variante_id, tipo_movimiento, cantidad, motivo)
+         VALUES (?, 'Egreso', ?, 'Venta')`,
+        [item.variante_id, item.cantidad]
+      );
     }
 
+    // Vaciar carrito del usuario
     await conn.query('DELETE FROM carrito WHERE usuario_id = ?', [usuario_id]);
 
-    await conn.query(`
-      INSERT INTO finanzas (tipo, descripcion, monto, fecha)
-      VALUES ('Ingreso', 'Venta ID ${venta_id}', ?, CURDATE())
-    `, [total]);
+    // Finanzas (opcional, si mantenés esta tabla)
+    await conn.query(
+      `INSERT INTO finanzas (tipo, descripcion, monto, fecha)
+       VALUES ('Ingreso', ?, ?, NOW())`,
+      [`Venta ID ${venta_id}`, total]
+    );
+
+    // Movimientos de caja por pagos (si no mandan, asumo todo efectivo)
+    const pagosNormalizados = Array.isArray(pagos) && pagos.length
+      ? pagos
+      : [{ metodo: 'efectivo', monto: total }];
+
+    await registrarMovimientosCajaPorPagos(conn, venta_id, pagosNormalizados, usuario_id);
 
     await conn.commit();
     res.json({ mensaje: 'Venta confirmada', venta_id });
@@ -119,10 +166,13 @@ exports.confirmarVenta = async (req, res) => {
   }
 };
 
+/* ===================== VENTA DESDE CARRITO (FRONTEND LOCAL) ===================== */
+
 exports.ventaDesdeCarrito = async (req, res) => {
-  const usuario_id = req.usuario.id;
+  const usuario_id = req.usuario?.id || null;
   const { items, pagos } = req.body;
-  if (!items || !items.length) {
+
+  if (!Array.isArray(items) || !items.length) {
     return res.status(400).json({ mensaje: 'El carrito está vacío.' });
   }
 
@@ -130,46 +180,47 @@ exports.ventaDesdeCarrito = async (req, res) => {
   try {
     await conn.beginTransaction();
 
+    // Total a partir de los items que llegan del front
     let total = 0;
-    for (const item of items) {
-      total += item.precio * item.cantidad;
-    }
+    for (const item of items) total += Number(item.precio) * Number(item.cantidad);
 
+    // Crear venta
     const [venta] = await conn.query(
       'INSERT INTO ventas (usuario_id, total, fecha) VALUES (?, ?, NOW())',
       [usuario_id, total]
     );
     const venta_id = venta.insertId;
 
+    // Detalle + stock + historial
     for (const item of items) {
-      await conn.query(`
-        INSERT INTO detalle_venta (venta_id, variante_id, cantidad, precio_unitario)
-        VALUES (?, ?, ?, ?)`,
-        [venta_id, item.variante_id, item.cantidad, item.precio]);
+      await conn.query(
+        `INSERT INTO detalle_venta (venta_id, variante_id, cantidad, precio_unitario)
+         VALUES (?, ?, ?, ?)`,
+        [venta_id, item.variante_id, item.cantidad, item.precio]
+      );
 
-      await conn.query(`
-        UPDATE variantes SET stock = stock - ? WHERE id = ?`,
-        [item.cantidad, item.variante_id]);
+      await conn.query(
+        `UPDATE variantes SET stock = stock - ? WHERE id = ?`,
+        [item.cantidad, item.variante_id]
+      );
 
-      await conn.query(`
-        INSERT INTO historial_stock (variante_id, tipo_movimiento, cantidad, motivo)
-        VALUES (?, 'Egreso', ?, 'Venta')`,
-        [item.variante_id, item.cantidad]);
+      await conn.query(
+        `INSERT INTO historial_stock (variante_id, tipo_movimiento, cantidad, motivo)
+         VALUES (?, 'Egreso', ?, 'Venta')`,
+        [item.variante_id, item.cantidad]
+      );
     }
 
-    await conn.query(`
-      INSERT INTO finanzas (tipo, descripcion, monto, fecha)
-      VALUES ('Ingreso', 'Venta múltiple ID ${venta_id}', ?, NOW())`,
-      [total]);
+    // Finanzas (opcional, si mantenés esta tabla)
+    await conn.query(
+      `INSERT INTO finanzas (tipo, descripcion, monto, fecha)
+       VALUES ('Ingreso', ?, ?, NOW())`,
+      [`Venta múltiple ID ${venta_id}`, total]
+    );
 
-    // REGISTRO DE MOVIMIENTOS DE CAJA (NUEVO CON venta_id)
-    for (const pago of pagos) {
-      const caja_tipo = pago.metodo === 'efectivo' ? 'fisica' : 'virtual';
-      await conn.query(`
-        INSERT INTO movimientos_caja (venta_id, tipo, descripcion, monto, metodo_pago, caja_tipo, usuario_id)
-        VALUES (?, 'ingreso', ?, ?, ?, ?, ?)`,
-        [venta_id, `Venta ID ${venta_id}`, pago.monto, pago.metodo, caja_tipo, usuario_id]);
-    }
+    // Movimientos de caja por pagos (obligatorio en este flujo)
+    const pagosNormalizados = Array.isArray(pagos) ? pagos : [];
+    await registrarMovimientosCajaPorPagos(conn, venta_id, pagosNormalizados, usuario_id);
 
     await conn.commit();
     res.json({ mensaje: 'Venta registrada', venta_id });
@@ -180,6 +231,8 @@ exports.ventaDesdeCarrito = async (req, res) => {
     conn.release();
   }
 };
+
+/* ===================== CONSULTAS ===================== */
 
 exports.listarVentas = async (req, res) => {
   try {
@@ -215,8 +268,8 @@ exports.listarVentasDetallado = async (req, res) => {
   try {
     const [ventas] = await db.query(`
       SELECT v.id, v.fecha, v.total, u.nombre AS usuario_nombre,
-        p.nombre AS producto_nombre, d.cantidad, d.precio_unitario,
-        vta.talle, vta.color
+             p.nombre AS producto_nombre, d.cantidad, d.precio_unitario,
+             vta.talle, vta.color
       FROM ventas v
       JOIN usuarios u ON v.usuario_id = u.id
       JOIN detalle_venta d ON d.venta_id = v.id

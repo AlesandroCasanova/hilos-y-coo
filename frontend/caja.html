@@ -3,144 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard de Caja | Hilos y Coo</title>
+  <title>Caja | Hilos y Coo</title>
   <link rel="stylesheet" href="css/caja.css" />
 </head>
 <body>
-
-  <div class="sidebar" id="sidebar">
-    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
-    <h2>Hilos y Coo</h2>
-    <ul>
-      <li><a href="dashboard.html">Dashboard general</a></li>
-      <li><a href="caja.html" class="active">Caja</a></li>
-      <li><a href="finanzas.html">Finanzas</a></li>
-      <li><a href="index.html" onclick="localStorage.clear()">Salir</a></li>
-    </ul>
-  </div>
-
-  <main class="contenido">
-    <h1>Gestión de Caja</h1>
-
-    <div class="dashboard-caja">
-      <div class="card">
-        <h3>Caja Física</h3>
-        <p id="saldo-fisica">$0.00</p>
-      </div>
-      <div class="card">
-        <h3>Caja Virtual</h3>
-        <p id="saldo-virtual">$0.00</p>
-      </div>
-      <div class="card">
-        <h3>Reservas Físicas</h3>
-        <p id="reservas-fisica">$0.00</p>
-      </div>
-      <div class="card">
-        <h3>Reservas Virtuales</h3>
-        <p id="reservas-virtual">$0.00</p>
-      </div>
-      <div class="card total">
-        <h3>Total</h3>
-        <p id="balance-total">$0.00</p>
-      </div>
+  <header class="topbar">
+    <a href="dashboard.html" class="btn">← Volver</a>
+    <h1>Movimientos del día</h1>
+    <div class="right">
+      <span>Física: <b id="saldo-fisica">$0,00</b></span>
+      <span>Virtual: <b id="saldo-virtual">$0,00</b></span>
+      <span>Total: <b id="balance-total">$0,00</b></span>
     </div>
+  </header>
 
-    <div class="acciones-caja">
-      <button onclick="mostrarModalReserva()">💼 Reservar dinero</button>
-      <button onclick="aplicarFiltros()">🔍 Ver movimientos</button>
-    </div>
-
-    <section class="filtros">
-      <label>Desde: <input type="date" id="fecha-desde"></label>
-      <label>Hasta: <input type="date" id="fecha-hasta"></label>
-      <label>Tipo:
-        <select id="filtro-tipo">
-          <option value="">Todos</option>
-          <option value="ingreso">Ingreso</option>
-          <option value="egreso">Egreso</option>
-          <option value="reserva">Reserva</option>
-        </select>
-      </label>
-      <label>Caja:
-        <select id="filtro-caja">
-          <option value="">Ambas</option>
-          <option value="fisica">Física</option>
-          <option value="virtual">Virtual</option>
-        </select>
-      </label>
-      <button onclick="aplicarFiltros()">Filtrar</button>
-    </section>
-
-    <section class="tabla">
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Tipo</th>
-            <th>Monto</th>
-            <th>Método</th>
-            <th>Caja</th>
-            <th>Usuario</th>
-            <th>Descripción</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-movimientos">
-          <!-- JS inserta aquí -->
-        </tbody>
-      </table>
-    </section>
-
-    <div class="acciones-auditoria">
-      <button onclick="abrirModalArqueo()">🔍 Arqueo intermedio</button>
-      <button onclick="window.location.href='auditoriaCaja.html'">📋 Auditoría de caja</button>
-    </div>
-  </main>
-
-  <!-- Modal de Reserva -->
-  <div class="modal" id="modalReserva" style="display: none;">
-    <div class="modal-contenido">
-      <h2>Reservar dinero</h2>
-      <label>Monto:</label>
-      <input type="number" id="montoReserva" min="0" step="0.01" required>
-      <label>Caja:</label>
-      <select id="cajaReserva">
+  <section class="filtros">
+    <label>Fecha
+      <input type="date" id="f-fecha">
+    </label>
+    <label>Cuenta
+      <select id="f-cuenta">
+        <option value="todas">Todas</option>
         <option value="fisica">Física</option>
         <option value="virtual">Virtual</option>
       </select>
-      <label>Descripción:</label>
-      <input type="text" id="descripcionReserva" placeholder="Ej: Retiro para depósito">
-      <button onclick="guardarReserva()">Guardar</button>
-      <button onclick="cerrarModalReserva()">Cancelar</button>
-    </div>
-  </div>
+    </label>
+    <button id="btn-buscar" class="btn">Buscar</button>
+  </section>
 
-  <!-- Modal de Arqueo Intermedio -->
-  <div class="modal" id="modalArqueo" style="display:none;">
-    <div class="modal-contenido" style="min-width:320px;">
-      <h2>Arqueo intermedio</h2>
-      <label>Caja:
-        <select id="arqueoCaja">
-          <option value="fisica">Física</option>
-          <option value="virtual">Virtual</option>
-        </select>
-      </label>
-      <label>Saldo contado:</label>
-      <input type="number" id="arqueoContado" min="0" step="0.01" required>
-      <label>Observaciones:</label>
-      <input type="text" id="arqueoObs" placeholder="Ej: Control sorpresa">
-      <div style="margin-top:16px; display:flex; gap:8px;">
-        <button onclick="guardarArqueo()">Registrar</button>
-        <button onclick="cerrarModalArqueo()">Cancelar</button>
-      </div>
-    </div>
-  </div>
+  <main>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Cuenta</th>
+          <th>Tipo</th>
+          <th>Monto</th>
+          <th>Descripción</th>
+          <th>Referencia</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-movs"></tbody>
+    </table>
+  </main>
 
   <script type="module" src="js/caja.js"></script>
-  <script>
-    function toggleSidebar() {
-      document.getElementById("sidebar").classList.toggle("collapsed");
-    }
-  </script>
-
 </body>
 </html>

@@ -1,37 +1,42 @@
-import { mostrarMensaje } from './utils.js';
+const API = 'http://localhost:3000/api';
+const form = document.getElementById('loginForm');
+const mensajeDiv = document.getElementById('mensaje');
 
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value.trim();
-  const mensajeError = document.getElementById('mensajeError');
-  mensajeError.textContent = '';
+  const contraseña = document.getElementById('password').value.trim();
 
   try {
-    const response = await fetch('http://localhost:3000/api/login', {
+    const res = await fetch(`${API}/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, contraseña: password })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, contraseña })
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
-    if (!response.ok) {
-      mensajeError.textContent = data.mensaje || 'Error al iniciar sesión';
-      mostrarMensaje(data.mensaje || 'Error al iniciar sesión', 'error');
+    if (!res.ok) {
+      mensajeDiv.textContent = data.mensaje || 'Error al iniciar sesión';
+      mensajeDiv.style.color = 'red';
       return;
     }
 
+    // Guardar token y usuario
     localStorage.setItem('token', data.token);
     localStorage.setItem('usuario', JSON.stringify(data.usuario));
-    window.location.href = 'dashboard.html';
+
+    mensajeDiv.textContent = 'Inicio de sesión exitoso. Redirigiendo...';
+    mensajeDiv.style.color = 'green';
+
+    setTimeout(() => {
+      window.location.href = 'dashboard.html';
+    }, 1000);
 
   } catch (error) {
-    mensajeError.textContent = 'Error al conectar con el servidor';
-    mostrarMensaje('Error al conectar con el servidor', 'error');
-    console.error(error);
+    console.error('Error al iniciar sesión:', error);
+    mensajeDiv.textContent = 'Error de conexión';
+    mensajeDiv.style.color = 'red';
   }
 });

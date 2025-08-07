@@ -5,235 +5,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Finanzas | Hilos y Coo</title>
   <link rel="stylesheet" href="css/finanzas.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-
-  <div class="sidebar" id="sidebar">
-    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
-    <h2>Hilos y Coo</h2>
-    <ul>
-      <li><a href="dashboard.html">Dashboard general</a></li>
-      <li><a href="caja.html">Caja</a></li>
-      <li><a href="finanzas.html" class="active">Finanzas</a></li>
-      <li><a href="index.html" onclick="localStorage.clear()">Salir</a></li>
-    </ul>
-  </div>
-
-  <main class="contenido">
-    <h1>Resumen Financiero</h1>
-
-    <div class="resumen-financiero">
-      <div class="card azul">
-        <h3>Caja Física</h3>
-        <p id="saldo-fisica">$0.00</p>
-      </div>
-      <div class="card verde">
-        <h3>Caja Virtual</h3>
-        <p id="saldo-virtual">$0.00</p>
-      </div>
-      <div class="card naranja">
-        <h3>Reservas Físicas</h3>
-        <p id="reservas-fisica">$0.00</p>
-      </div>
-      <div class="card naranja">
-        <h3>Reservas Virtuales</h3>
-        <p id="reservas-virtual">$0.00</p>
-      </div>
-      <div class="card gris">
-        <h3>Balance Total</h3>
-        <p id="balance-total">$0.00</p>
-      </div>
+  <header class="topbar">
+    <a href="dashboard.html" class="btn">← Volver</a>
+    <h1>Finanzas</h1>
+    <div class="right">
+      <span>Física: <b id="saldo-fisica">$0,00</b></span>
+      <span>Virtual: <b id="saldo-virtual">$0,00</b></span>
+      <span>Reservas Fís.: <b id="reservas-fisica">$0,00</b></span>
+      <span>Reservas Vir.: <b id="reservas-virtual">$0,00</b></span>
+      <span>Total: <b id="balance-total">$0,00</b></span>
     </div>
+  </header>
 
-    <div class="acciones-finanzas">
-      <button onclick="abrirModalIngreso()">+ Registrar Ingreso</button>
-      <button onclick="abrirModalEgreso()">- Registrar Egreso</button>
-      <button onclick="mostrarModalAnalisis()" class="btn-analisis">Ver análisis financiero</button>
-      <button onclick="abrirModalReservas()" class="btn-reservas">Gestionar reservas</button>
-      <button onclick="abrirModalTransferencia()" class="btn-transferencia">Transferir entre cajas</button>
-    </div>
+  <section class="tabs">
+    <button id="tab-caja" class="tab active">Movimientos de caja</button>
+    <button id="tab-reservas" class="tab">Movimientos de reservas</button>
+  </section>
 
-    <!-- MODAL: Ingreso -->
-    <div class="modal" id="modalIngreso" style="display:none;">
-      <div class="modal-contenido">
-        <h2>Registrar Ingreso</h2>
-        <label>Categoría:
-          <input type="text" id="ingreso-categoria" placeholder="Ej: Venta, Otro ingreso" required>
-        </label>
-        <label>Entidad:
-          <input type="text" id="ingreso-entidad" placeholder="Ej: Cliente, Otro" required>
-        </label>
-        <label>Concepto:
-          <input type="text" id="ingreso-concepto" placeholder="Ej: Venta mostrador" required>
-        </label>
-        <label>Descripción:
-          <input type="text" id="ingreso-descripcion" placeholder="Detalle">
-        </label>
-        <label>Caja:
-          <select id="ingreso-caja" required>
-            <option value="fisica">Caja física</option>
-            <option value="virtual">Caja virtual</option>
-          </select>
-        </label>
-        <label>Monto:
-          <input type="number" id="ingreso-monto" min="0.01" step="0.01" required>
-        </label>
-        <button onclick="guardarIngreso()">Registrar</button>
-        <button onclick="cerrarModalIngreso()" type="button">Cancelar</button>
-      </div>
-    </div>
+  <section id="filtros-caja" class="filtros">
+    <label>Desde <input type="date" id="c-desde"></label>
+    <label>Hasta <input type="date" id="c-hasta"></label>
+    <label>Cuenta
+      <select id="c-cuenta">
+        <option value="todas">Todas</option>
+        <option value="fisica">Física</option>
+        <option value="virtual">Virtual</option>
+      </select>
+    </label>
+    <label>Tipo
+      <select id="c-tipo">
+        <option value="todos">Todos</option>
+        <option value="ingreso">Ingreso</option>
+        <option value="egreso">Egreso</option>
+        <option value="transferencia">Transferencia</option>
+        <option value="reserva">Reserva</option>
+        <option value="ajuste">Ajuste</option>
+      </select>
+    </label>
+    <button id="c-buscar" class="btn">Buscar</button>
+  </section>
 
-    <!-- MODAL: Egreso -->
-    <div class="modal" id="modalEgreso" style="display:none;">
-      <div class="modal-contenido">
-        <h2>Registrar Egreso</h2>
-        <label>Tipo de egreso:
-          <select id="egreso-tipo" required>
-            <option value="Pago proveedor">Pago proveedor</option>
-            <option value="Sueldo">Sueldo</option>
-            <option value="Impuesto">Impuesto</option>
-            <option value="Otro">Otro</option>
-          </select>
-        </label>
-        <label>Categoría:
-          <select id="egreso-categoria" required>
-            <option value="">Seleccioná...</option>
-          </select>
-          <input type="text" id="egreso-categoria-manual" placeholder="Otra categoría..." style="margin-top:5px;">
-        </label>
-        <label>Concepto:
-          <select id="egreso-concepto" required>
-            <option value="">Seleccioná...</option>
-          </select>
-          <input type="text" id="egreso-concepto-manual" placeholder="Otro concepto..." style="margin-top:5px;">
-        </label>
-        <label>Descripción:
-          <input type="text" id="egreso-descripcion" placeholder="Detalle">
-        </label>
-        <label>Caja:
-          <select id="egreso-caja" required>
-            <option value="fisica">Caja física</option>
-            <option value="virtual">Caja virtual</option>
-          </select>
-        </label>
-        <label>Monto:
-          <input type="number" id="egreso-monto" min="0.01" step="0.01" required>
-        </label>
-        <button onclick="guardarEgreso()">Registrar</button>
-        <button onclick="cerrarModalEgreso()" type="button">Cancelar</button>
-      </div>
-    </div>
+  <section id="filtros-reservas" class="filtros oculto">
+    <label>Desde <input type="date" id="r-desde"></label>
+    <label>Hasta <input type="date" id="r-hasta"></label>
+    <label>Tipo
+      <select id="r-tipo">
+        <option value="todas">Todas</option>
+        <option value="fisica">Física</option>
+        <option value="virtual">Virtual</option>
+      </select>
+    </label>
+    <label>Movimiento
+      <select id="r-mov">
+        <option value="todos">Todos</option>
+        <option value="alta">Alta</option>
+        <option value="liberacion">Liberación</option>
+      </select>
+    </label>
+    <button id="r-buscar" class="btn">Buscar</button>
+  </section>
 
-    <!-- MODAL: Transferencia entre cajas -->
-    <div class="modal" id="modalTransferencia" style="display:none;">
-      <div class="modal-contenido">
-        <h2>Transferir entre cajas</h2>
-        <label>Origen:
-          <select id="transfer-origen" required>
-            <option value="fisica">Caja física</option>
-            <option value="virtual">Caja virtual</option>
-          </select>
-        </label>
-        <label>Destino:
-          <select id="transfer-destino" required>
-            <option value="virtual">Caja virtual</option>
-            <option value="fisica">Caja física</option>
-          </select>
-        </label>
-        <label>Descripción:
-          <input type="text" id="transfer-descripcion" placeholder="Ej: Para pagos electrónicos" />
-        </label>
-        <label>Monto:
-          <input type="number" id="transfer-monto" min="0.01" step="0.01" required>
-        </label>
-        <button onclick="realizarTransferencia()">Transferir</button>
-        <button onclick="cerrarModalTransferencia()" type="button">Cancelar</button>
-      </div>
-    </div>
+  <main>
+    <table id="tabla-caja">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Cuenta</th>
+          <th>Tipo</th>
+          <th>Monto</th>
+          <th>Descripción</th>
+          <th>Referencia</th>
+        </tr>
+      </thead>
+      <tbody id="caja-rows"></tbody>
+    </table>
 
-    <!-- MODAL: GESTIONAR RESERVAS -->
-    <div class="modal" id="modalReservas" style="display:none;">
-      <div class="modal-contenido" style="min-width:460px;">
-        <span class="cerrar" onclick="cerrarModalReservas()">&times;</span>
-        <h2>Reservas activas</h2>
-        <div class="bloque-reserva">
-          <strong>Reserva física:</strong>
-          <span id="total-reserva-fisica" style="font-weight:bold; font-size:18px; color:#2196F3;">$0.00</span><br>
-          <input type="number" id="montoRetiroFisica" min="0.01" step="0.01" placeholder="Monto a retirar" />
-          <button onclick="retirarDesdeReserva('fisica')">Retirar</button>
-        </div>
-        <div class="bloque-reserva">
-          <strong>Reserva virtual:</strong>
-          <span id="total-reserva-virtual" style="font-weight:bold; font-size:18px; color:#4CAF50;">$0.00</span><br>
-          <input type="number" id="montoRetiroVirtual" min="0.01" step="0.01" placeholder="Monto a retirar" />
-          <button onclick="retirarDesdeReserva('virtual')">Retirar</button>
-        </div>
-        <button onclick="abrirModalTransferencia()" class="btn-transferencia">Transferir entre cajas</button>
-        <hr>
-        <h3 style="margin-top:20px;">Detalles de reservas:</h3>
-        <table style="width:100%;margin-top:10px;">
-          <thead>
-            <tr>
-              <th>Caja</th>
-              <th>Monto Total</th>
-              <th>Liberado</th>
-              <th>Disponible</th>
-              <th>Descripción</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-reservas">
-            <!-- Solo lectura, sin inputs ni botones individuales -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- MODAL: Análisis financiero -->
-    <div class="modal" id="modalAnalisis" style="display:none;">
-      <div class="modal-contenido" style="min-width:600px;">
-        <span class="cerrar" onclick="cerrarModalAnalisis()">&times;</span>
-        <div class="tabs">
-          <button class="tablink active" onclick="mostrarTab('graficos')">Gráficos</button>
-          <button class="tablink" onclick="mostrarTab('historial')">Historial</button>
-        </div>
-        <div id="tab-graficos" class="tab-content">
-          <canvas id="grafico-torta" height="200"></canvas>
-          <div id="mensaje-sin-datos" style="display:none; color: #666; font-weight:bold; margin-top:20px;">
-            No hay movimientos registrados para mostrar.
-          </div>
-        </div>
-
-        <div id="tab-historial" class="tab-content" style="display:none;">
-          <div class="historial-table-container">
-            <table class="historial-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Tipo</th>
-                  <th>Categoría</th>
-                  <th>Entidad</th>
-                  <th>Concepto</th>
-                  <th>Descripción</th>
-                  <th>Monto</th>
-                </tr>
-              </thead>
-              <tbody id="tabla-historial">
-                <!-- JS -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
+    <table id="tabla-reservas" class="oculto">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Tipo</th>
+          <th>Movimiento</th>
+          <th>Monto</th>
+          <th>Descripción</th>
+          <th>Referencia</th>
+        </tr>
+      </thead>
+      <tbody id="reservas-rows"></tbody>
+    </table>
   </main>
 
-  <script>
-    function toggleSidebar() {
-      document.getElementById("sidebar").classList.toggle("collapsed");
-    }
-  </script>
   <script type="module" src="js/finanzas.js"></script>
 </body>
 </html>

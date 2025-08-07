@@ -20,6 +20,8 @@ app.get('/api/ping', (req, res) => {
 // Rutas de usuarios: /api/usuarios/registro y /api/usuarios/login
 app.use('/api/usuarios', usuariosRoutes);
 
+
 app.listen(port, () => {
   console.log(`Servidor corriendo en http://localhost:${port}`);
 });
+
