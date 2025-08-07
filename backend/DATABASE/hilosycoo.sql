@@ -331,3 +331,5 @@ DELETE FROM movimientos_caja WHERE descripcion LIKE '%reserva%';
 DELETE FROM finanzas WHERE es_reserva = 1;
 
 SELECT * FROM movimientos_caja WHERE caja_tipo = 'fisica';
+
+DROP DATABASE hilosycoo
