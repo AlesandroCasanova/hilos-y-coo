@@ -333,3 +333,74 @@ DELETE FROM finanzas WHERE es_reserva = 1;
 SELECT * FROM movimientos_caja WHERE caja_tipo = 'fisica';
 
 DROP DATABASE hilosycoo
+
+
+-- =========================================================
+--  Ledger en Español - Caja/Reservas/Saldos por movimientos
+--  Fecha: 2025-08-07
+-- =========================================================
+
+-- 1) Movimientos de dinero en cajas (física/virtual)
+CREATE TABLE IF NOT EXISTS movimientos_caja (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  usuario_id INT NULL,
+  cuenta ENUM('caja_fisica','caja_virtual') NOT NULL,
+  tipo ENUM('ingreso','egreso','transferencia','reserva','ajuste') NOT NULL,
+  signo TINYINT NOT NULL,                -- +1 ingreso / -1 egreso
+  monto DECIMAL(14,2) NOT NULL CHECK (monto >= 0),
+  referencia_tipo VARCHAR(50) NULL,      -- venta | pago | pedido | cierre | etc
+  referencia_id INT NULL,
+  descripcion VARCHAR(255) NULL,
+  INDEX idx_cuenta_fecha (cuenta, fecha),
+  INDEX idx_ref (referencia_tipo, referencia_id)
+) ENGINE=InnoDB;
+
+-- 2) Movimientos de reservas (altas/liberaciones; el disponible = altas - liberaciones)
+CREATE TABLE IF NOT EXISTS movimientos_reserva (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  usuario_id INT NULL,
+  tipo ENUM('fisica','virtual') NOT NULL,
+  movimiento ENUM('alta','liberacion') NOT NULL,
+  monto DECIMAL(14,2) NOT NULL CHECK (monto >= 0),
+  referencia_tipo VARCHAR(50) NULL,      -- cierre, manual, pedido, etc
+  referencia_id INT NULL,
+  descripcion VARCHAR(255) NULL,
+  INDEX idx_tipo_fecha (tipo, fecha)
+) ENGINE=InnoDB;
+
+-- 3) Sesiones de caja física (aperturas/cierres) - la virtual no requiere sesión
+CREATE TABLE IF NOT EXISTS sesiones_caja (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tipo ENUM('fisica') NOT NULL DEFAULT 'fisica',
+  fecha_apertura DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  usuario_id_apertura INT NOT NULL,
+  monto_inicial DECIMAL(14,2) NOT NULL DEFAULT 0,
+  fecha_cierre DATETIME NULL,
+  usuario_id_cierre INT NULL,
+  monto_final DECIMAL(14,2) NULL,
+  estado ENUM('abierta','cerrada') NOT NULL DEFAULT 'abierta'
+) ENGINE=InnoDB;
+
+-- 4) Vistas de saldos actuales (cajas + reservas)
+DROP VIEW IF EXISTS vista_saldo_cajas;
+CREATE VIEW vista_saldo_cajas AS
+SELECT
+  IFNULL(SUM(CASE WHEN cuenta = 'caja_fisica' THEN signo * monto ELSE 0 END),0) AS caja_fisica,
+  IFNULL(SUM(CASE WHEN cuenta = 'caja_virtual' THEN signo * monto ELSE 0 END),0) AS caja_virtual
+FROM movimientos_caja;
+
+DROP VIEW IF EXISTS vista_reservas_disponibles;
+CREATE VIEW vista_reservas_disponibles AS
+SELECT
+  IFNULL(SUM(CASE WHEN tipo='fisica'  AND movimiento='alta'       THEN monto ELSE 0 END) -
+         SUM(CASE WHEN tipo='fisica'  AND movimiento='liberacion' THEN monto ELSE 0 END), 0) AS reservas_fisica,
+  IFNULL(SUM(CASE WHEN tipo='virtual' AND movimiento='alta'       THEN monto ELSE 0 END) -
+         SUM(CASE WHEN tipo='virtual' AND movimiento='liberacion' THEN monto ELSE 0 END), 0) AS reservas_virtual
+FROM movimientos_reserva;
+
+
+ALTER TABLE movimientos_caja
+ADD COLUMN sesion_id INT NULL,
+ADD FOREIGN KEY (sesion_id) REFERENCES sesiones_caja(id);
