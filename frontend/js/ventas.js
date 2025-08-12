@@ -6,10 +6,38 @@ import {
 } from './utils.js';
 
 const API = 'http://localhost:3000/api';
-const token = obtenerToken();
-const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
 
-document.addEventListener('DOMContentLoaded', () => {
+// ===== Guardia de sesión (solo login, sin roles) =====
+async function validarSesion() {
+  const tk = obtenerToken();
+  if (!tk) {
+    alert('Acceso denegado: iniciá sesión para continuar.');
+    window.location.href = 'login.html';
+    return null;
+  }
+  try {
+    const r = await fetch(`${API}/usuarios/me`, { headers: { Authorization: 'Bearer ' + tk } });
+    if (!r.ok) throw new Error('no-auth');
+    const data = await r.json();
+    window.__USER__ = data?.usuario || data;
+    return window.__USER__;
+  } catch (e) {
+    try { localStorage.removeItem('token'); localStorage.removeItem('usuario'); } catch {}
+    alert('Acceso denegado: tu sesión expiró o es inválida. Volvé a iniciar sesión.');
+    window.location.href = 'login.html';
+    return null;
+  }
+}
+// ================================================
+
+const token = obtenerToken();
+let usuario = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const authUser = await validarSesion();
+  if (!authUser) return;
+  usuario = authUser; // usamos el usuario validado del backend
+
   cargarCarrito();
   cargarHistorialVentas();
   document.getElementById('btnConfirmarVenta').onclick = confirmarVenta;
@@ -144,7 +172,6 @@ window.verDetalleVenta = function(id) {
 
 function formatearFecha(fecha) {
   if (!fecha) return "-";
-  // Formato: yyyy-mm-ddTHH:MM:SS...
   const d = new Date(fecha);
   return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}, ${d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`;
 }
@@ -152,4 +179,4 @@ function formatearFecha(fecha) {
 function cerrarSesion() {
   logout();
 }
-windows.cerrarSesion = cerrarSesion;
+window.cerrarSesion = cerrarSesion; // <-- corregido (antes decía "windows")

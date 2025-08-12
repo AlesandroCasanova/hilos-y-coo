@@ -4,6 +4,29 @@ import { obtenerToken, logout } from './utils.js';
 const API = 'http://localhost:3000/api';
 const UMBRAL_ALERTA = 2;
 
+// ===== Guardia de sesión (solo login, sin roles) =====
+async function validarSesion() {
+  const tk = obtenerToken();
+  if (!tk) {
+    alert('Acceso denegado: iniciá sesión para continuar.');
+    window.location.href = 'login.html';
+    return null;
+  }
+  try {
+    const r = await fetch(`${API}/usuarios/me`, { headers: { Authorization: 'Bearer ' + tk } });
+    if (!r.ok) throw new Error('no-auth');
+    const data = await r.json();
+    window.__USER__ = data?.usuario || data;
+    return window.__USER__;
+  } catch (e) {
+    try { localStorage.removeItem('token'); localStorage.removeItem('usuario'); } catch {}
+    alert('Acceso denegado: tu sesión expiró o es inválida. Volvé a iniciar sesión.');
+    window.location.href = 'login.html';
+    return null;
+  }
+}
+// ================================================
+
 // refs
 let grid, buscarInput, soloAlertasChk, badgeGlobal, notice, btnRefrescar, btnSalir;
 let modal, mImg, mNombre, mId, mCodigo, mCategoria, mProveedor, mPProv, mPVenta, mTbody, btnCerrar, btnHistorial;
@@ -456,9 +479,9 @@ function wire(){
   btnCerrar?.addEventListener('click', (e) => { e.preventDefault(); closeModal(); });
 
   // Click en overlay: cierra si el click no ocurrió dentro del contenido
-modal?.addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) closeModal();
-});
+  modal?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeModal();
+  });
 
   // Tecla Escape
   document.addEventListener('keydown', (e) => {
@@ -466,7 +489,10 @@ modal?.addEventListener('click', (e) => {
   });
 }
 
-document.addEventListener('DOMContentLoaded', ()=>{
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const usuario = await validarSesion();
+  if (!usuario) return;
+
   // cache DOM
   grid = document.getElementById('inventario-grid');
   buscarInput = document.getElementById('buscar');

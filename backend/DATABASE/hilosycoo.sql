@@ -448,17 +448,6 @@ CREATE TABLE IF NOT EXISTS inventario_movimientos (
   INDEX (variante_id)
 );
 
--- Movimientos de caja (formato que tu UI de caja ya espera)
-CREATE TABLE IF NOT EXISTS caja_movimientos (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  fecha DATETIME NOT NULL,
-  cuenta ENUM('caja_fisica','caja_virtual') NOT NULL,
-  tipo VARCHAR(80) NOT NULL,           -- 'devolucion' | 'diferencia por cambio'
-  signo TINYINT NOT NULL,              -- +1 ingreso, -1 egreso
-  monto DECIMAL(12,2) NOT NULL,
-  descripcion VARCHAR(255) NULL,
-  referencia_tipo VARCHAR(50) NULL,
-  referencia_id INT NULL,
-  INDEX (fecha),
-  INDEX (referencia_tipo, referencia_id)
-);
+
+ALTER TABLE inventario_movimientos
+  ADD COLUMN descripcion VARCHAR(255) NULL AFTER referencia_id;

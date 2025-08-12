@@ -49,17 +49,7 @@ const mesSel  = document.getElementById('mes');
 const btnAplicar = document.getElementById('btn-aplicar');
 const rangoLabel = document.getElementById('rango-label');
 
-// Resumen KPIs
-// saldos
-// saldo-fisica, saldo-virtual, res-fis, res-vir, saldo-total
-// cashflow
-// cf-ing, cf-egr, cf-neto
-// P&L mini
-// pl-ventas, pl-cogs, pl-otros, pl-opex, pl-mb, pl-mb-pct, pl-net, pl-net-pct
-
-// Ganancias KPIs
-// g-ventas, g-cogs, g-otros, g-opex, g-mb, g-mb-pct, g-net, g-net-pct, g-compras
-// Cashflow espejo: g-cf-ing, g-cf-egr, g-cf-net
+// Ganancias: top productos
 const topRows = document.getElementById('top-rows');
 const topLimitSel = document.getElementById('top-limit');
 const btnExportTop = document.getElementById('btn-export-top');
@@ -99,21 +89,22 @@ async function validarSesion(){
     return d.usuario || d;
   }catch{
     try{ localStorage.removeItem('token'); localStorage.removeItem('usuario'); }catch{}
-    alert('Sesión inválida o expirada. Iniciá sesión.'); location.href='login.html'; return null;
+    alert('Sesión inválida o expirada. Iniciá sesión.');
+    location.href='login.html';
+    return null;
   }
 }
+
 function setTabsByRole(){
   const rn = normalizarRol(ROLE);
-  const isOwner = ['dueno','duenio','admin'].includes(rn);
+  const isOwner = ['dueno','duenio'].includes(rn); // ← solo Dueño
   const gananciasTabBtn = document.querySelector('.tab[data-tab="ganancias"]');
   if (gananciasTabBtn) gananciasTabBtn.classList.toggle('oculto', !isOwner);
   if(!isOwner && document.querySelector('.tab.active')?.dataset.tab==='ganancias'){ selectTab('resumen'); }
 }
 
 // ===== Tabs =====
-tabBtns.forEach(b=>{
-  b.addEventListener('click', ()=> selectTab(b.dataset.tab));
-});
+tabBtns.forEach(b=> b.addEventListener('click', ()=> selectTab(b.dataset.tab)));
 function selectTab(name){
   tabBtns.forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
   [secResumen, secGanancias, secMovs, secReservas].forEach(sec=>sec.classList.remove('show'));
@@ -144,13 +135,6 @@ btnAplicar.addEventListener('click', async ()=>{
 });
 
 // ===== Loaders =====
-async function loadUsuario(){
-  USER = await validarSesion(); if(!USER) return;
-  ROLE = USER.rol || 'Empleado';
-  if (userEl) userEl.textContent = `${USER.nombre} (${USER.rol})`;
-  setTabsByRole();
-}
-
 async function loadSaldos(){
   try{
     const r = await fetch(`${API}/finanzas/saldos`, { headers:authHeaders() });
@@ -369,6 +353,16 @@ btnSalir.addEventListener('click', ()=>{
 document.addEventListener('DOMContentLoaded', async ()=>{
   USER = await validarSesion(); if(!USER) return;
   ROLE = USER.rol || 'Empleado';
+
+  // ---- AUTORIZACIÓN DE ROL (Dueño) ----
+  const rn = normalizarRol(ROLE);
+  if (!['dueno','duenio'].includes(rn)) {
+    alert('Acceso denegado: esta sección es solo para el Dueño.');
+    location.href = 'dashboard.html';
+    return;
+  }
+  // -------------------------------------
+
   if (userEl) userEl.textContent = `${USER.nombre} (${USER.rol})`;
   setTabsByRole();
 

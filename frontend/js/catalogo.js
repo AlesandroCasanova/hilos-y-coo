@@ -7,12 +7,39 @@ import {
 
 const API = 'http://localhost:3000/api';
 const token = obtenerToken();
+
+// ===== Guardia de sesión (solo login, sin roles) =====
+async function validarSesion() {
+  const tk = obtenerToken();
+  if (!tk) {
+    alert('Acceso denegado: iniciá sesión para continuar.');
+    window.location.href = 'login.html';
+    return null;
+  }
+  try {
+    const r = await fetch(`${API}/usuarios/me`, { headers: { Authorization: 'Bearer ' + tk } });
+    if (!r.ok) throw new Error('no-auth');
+    const data = await r.json();
+    window.__USER__ = data?.usuario || data;
+    return window.__USER__;
+  } catch (e) {
+    try { localStorage.removeItem('token'); localStorage.removeItem('usuario'); } catch {}
+    alert('Acceso denegado: tu sesión expiró o es inválida. Volvé a iniciar sesión.');
+    window.location.href = 'login.html';
+    return null;
+  }
+}
+// ================================================
+
 let productosCatalogo = [];
 let inventarioPorProducto = {};
 let carrito = JSON.parse(localStorage.getItem('carritoVenta')) || [];
 
 // Inicialización
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  const usuario = await validarSesion();
+  if (!usuario) return;
+
   cargarCategoriasCatalogo();
   cargarCatalogo();
   document.getElementById('busquedaTexto').addEventListener('input', filtrarCatalogo);
@@ -62,7 +89,6 @@ function renderizarCatalogo(productos) {
     const variantes = inventarioPorProducto[prod.id] || [];
     let variantesHTML = '';
     variantes.forEach(v => {
-      const claveCarrito = `${prod.id}-${v.talle}-${v.color}`;
       const yaEnCarrito = carrito.find(item => item.variante_id == v.id);
       variantesHTML += `
         <div class="variante-row">
