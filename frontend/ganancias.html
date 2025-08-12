@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ganancias mensuales | Hilos y Coo</title>
+  <link rel="stylesheet" href="css/dashboard.css"/>
+  <style>
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    .filtros { display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:14px; }
+    .filtros .group { display:flex; flex-direction:column; gap:6px; }
+    .btn { background:#1f2937; color:#e5e7eb; border:1px solid rgba(255,255,255,.12); padding:8px 12px; border-radius:10px; cursor:pointer; }
+    .btn:hover{ background:#111827; }
+    .kpis { display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; margin-bottom:14px; }
+    .kpi { background:#0f172a; border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px; }
+    .kpi span { display:block; font-size:12px; color:#94a3b8; margin-bottom:6px; }
+    .kpi b { font-size:18px; }
+    .cols { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+    .card { background:#0f172a; border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px; }
+    table { width:100%; border-collapse: collapse; }
+    th,td{ padding:10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; }
+    .muted{ color:#94a3b8; font-size:12px; }
+    @media (max-width: 1000px){ .kpis{ grid-template-columns: 1fr 1fr; } .cols{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🧵</div>
+      <h1>Hilos y Coo</h1>
+    </div>
+    <div class="session">
+      <span class="user-label">Usuario:</span>
+      <span id="usuario-logueado" class="user-value">Cargando…</span>
+      <button id="btn-back" class="btn">Volver</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h2 style="margin:8px 0 12px">Ganancias mensuales</h2>
+
+    <div class="filtros">
+      <div class="group">
+        <label for="sel-year">Año</label>
+        <select id="sel-year"></select>
+      </div>
+      <div class="group">
+        <label for="sel-month">Mes</label>
+        <select id="sel-month">
+          <option value="1">Enero</option><option value="2">Febrero</option>
+          <option value="3">Marzo</option><option value="4">Abril</option>
+          <option value="5">Mayo</option><option value="6">Junio</option>
+          <option value="7">Julio</option><option value="8">Agosto</option>
+          <option value="9">Septiembre</option><option value="10">Octubre</option>
+          <option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+      </div>
+      <button id="btn-aplicar" class="btn">Aplicar</button>
+    </div>
+
+    <section class="kpis">
+      <div class="kpi"><span>Ingresos por ventas</span><b id="kpi-ingresos-ventas">0,00</b></div>
+      <div class="kpi"><span>COGS (costo vendido)</span><b id="kpi-cogs">0,00</b></div>
+      <div class="kpi"><span>Margen bruto</span><b id="kpi-bruto">0,00</b><div class="muted" id="kpi-bruto-pct">0%</div></div>
+      <div class="kpi"><span>Gastos operativos</span><b id="kpi-opex">0,00</b></div>
+      <div class="kpi"><span>Ganancia neta (contable)</span><b id="kpi-neta">0,00</b><div class="muted" id="kpi-neta-pct">0%</div></div>
+    </section>
+
+    <div class="cols">
+      <section class="card">
+        <h3 style="margin:0 0 8px">Detalle contable</h3>
+        <table>
+          <tbody>
+            <tr><td>Otros ingresos (no ventas)</td><td id="row-otros-ing">$ 0,00</td></tr>
+            <tr><td>Egresos por compras (proveedores)</td><td id="row-egr-comp">$ 0,00</td></tr>
+          </tbody>
+        </table>
+        <p class="muted" style="margin-top:8px">
+          * La ganancia neta contable usa COGS + gastos operativos. Los pagos a proveedores aparecen aparte para ver salida de caja, pero no afectan la ganancia contable (evita doble conteo).
+        </p>
+      </section>
+
+      <section class="card">
+        <h3 style="margin:0 0 8px">Flujo de caja (estricto)</h3>
+        <table>
+          <tbody>
+            <tr><td>Ingresos de caja</td><td id="row-caja-ing">$ 0,00</td></tr>
+            <tr><td>Egresos de caja</td><td id="row-caja-egr">$ 0,00</td></tr>
+            <tr><td><b>Neto de caja del mes</b></td><td id="row-caja-neto"><b>$ 0,00</b></td></tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <h3 style="margin:14px 0 8px">Top productos por margen (mes)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Producto</th><th>Unidades</th><th>Ingresos</th><th>COGS</th><th>Margen</th><th>%</th>
+        </tr>
+      </thead>
+      <tbody id="top-rows">
+        <tr><td colspan="7" class="muted">Sin datos</td></tr>
+      </tbody>
+    </table>
+  </main>
+
+  <script type="module" src="js/ganancias.js"></script>
+</body>
+</html>

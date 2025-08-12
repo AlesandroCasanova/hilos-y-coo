@@ -1,102 +1,322 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Finanzas | Hilos y Coo</title>
-  <link rel="stylesheet" href="css/finanzas.css" />
+  <link rel="stylesheet" href="css/finanzas.css"/>
 </head>
+
 <body>
-  <header class="topbar">
-    <a href="dashboard.html" class="btn">← Volver</a>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">💰</div>
     <h1>Finanzas</h1>
-    <div class="right">
-      <span>Física: <b id="saldo-fisica">$0,00</b></span>
-      <span>Virtual: <b id="saldo-virtual">$0,00</b></span>
-      <span>Reservas Fís.: <b id="reservas-fisica">$0,00</b></span>
-      <span>Reservas Vir.: <b id="reservas-virtual">$0,00</b></span>
-      <span>Total: <b id="balance-total">$0,00</b></span>
+  </div>
+  <div class="right">
+    <span>Usuario: <b id="usuario-logueado">—</b></span>
+    <a href="dashboard.html" class="btn ghost">← Volver</a>
+    <button id="btn-salir" class="btn danger">Salir</button>
+  </div>
+</header>
+
+<main class="container">
+  <!-- Selector de PERÍODO (impacta Resumen + Ganancias) -->
+  <section class="toolbar" id="periodo-bar">
+    <div class="form" style="grid-template-columns: repeat(3, minmax(140px, 1fr)); gap:10px;">
+      <div>
+        <label for="anio">Año</label>
+        <select id="anio"></select>
+      </div>
+      <div>
+        <label for="mes">Mes</label>
+        <select id="mes"></select>
+      </div>
+      <div style="display:flex;align-items:end;gap:8px;">
+        <button id="btn-aplicar" class="btn">Aplicar</button>
+        <span id="rango-label" class="muted"></span>
+      </div>
     </div>
-  </header>
+  </section>
 
+  <!-- Tabs -->
   <section class="tabs">
-    <button id="tab-caja" class="tab active">Movimientos de caja</button>
-    <button id="tab-reservas" class="tab">Movimientos de reservas</button>
+    <button class="tab active" data-tab="resumen">Resumen</button>
+    <button class="tab" data-tab="ganancias">Ganancias (P&L)</button>
+    <button class="tab" data-tab="movs">Movimientos</button>
+    <button class="tab" data-tab="reservas">Reservas</button>
   </section>
 
-  <section id="filtros-caja" class="filtros">
-    <label>Desde <input type="date" id="c-desde"></label>
-    <label>Hasta <input type="date" id="c-hasta"></label>
-    <label>Cuenta
-      <select id="c-cuenta">
-        <option value="todas">Todas</option>
-        <option value="fisica">Física</option>
-        <option value="virtual">Virtual</option>
-      </select>
-    </label>
-    <label>Tipo
-      <select id="c-tipo">
-        <option value="todos">Todos</option>
-        <option value="ingreso">Ingreso</option>
-        <option value="egreso">Egreso</option>
-        <option value="transferencia">Transferencia</option>
-        <option value="reserva">Reserva</option>
-        <option value="ajuste">Ajuste</option>
-      </select>
-    </label>
-    <button id="c-buscar" class="btn">Buscar</button>
+  <!-- ================= RESUMEN ================= -->
+  <section id="sec-resumen" class="tab-panel show">
+    <div class="grid grid-3">
+      <article class="card">
+        <h3>Saldos actuales</h3>
+        <div class="kpi"><span class="label">Caja física</span><div id="saldo-fisica" class="value">$ 0,00</div></div>
+        <div class="kpi"><span class="label">Caja virtual</span><div id="saldo-virtual" class="value">$ 0,00</div></div>
+        <div class="hr"></div>
+        <div class="kpi"><span class="label">Reservas física</span><div id="res-fis" class="value">$ 0,00</div></div>
+        <div class="kpi"><span class="label">Reservas virtual</span><div id="res-vir" class="value">$ 0,00</div></div>
+        <div class="hr"></div>
+        <div class="kpi"><b>Total</b><div id="saldo-total" class="value">$ 0,00</div></div>
+      </article>
+
+      <article class="card">
+        <h3>Flujo de caja del mes</h3>
+        <div class="kpi"><span class="label">Ingresos</span><div id="cf-ing" class="value">$ 0,00</div></div>
+        <div class="kpi"><span class="label">Egresos</span><div id="cf-egr" class="value">$ 0,00</div></div>
+        <div class="hr"></div>
+        <div class="kpi"><b>Neto</b><div id="cf-neto" class="value">$ 0,00</div></div>
+        <p class="caption">Neto de <b>efectivo</b> del mes (no es ganancia contable).</p>
+      </article>
+
+      <article class="card">
+        <h3>Resumen contable del mes</h3>
+        <div class="kpi"><span class="label">Ingresos por ventas</span><div id="pl-ventas" class="value">$ 0,00</div></div>
+        <div class="kpi"><span class="label">COGS (costo vendido)</span><div id="pl-cogs" class="value">$ 0,00</div></div>
+        <div class="kpi"><span class="label">Otros ingresos</span><div id="pl-otros" class="value">$ 0,00</div></div>
+        <div class="kpi"><span class="label">Gastos operativos</span><div id="pl-opex" class="value">$ 0,00</div></div>
+        <div class="hr"></div>
+        <div class="kpi">
+          <b>Margen bruto</b>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div id="pl-mb" class="value">$ 0,00</div>
+            <span id="pl-mb-pct" class="pill">0%</span>
+          </div>
+        </div>
+        <div class="kpi">
+          <b>Ganancia neta</b>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div id="pl-net" class="value">$ 0,00</div>
+            <span id="pl-net-pct" class="pill">0%</span>
+          </div>
+        </div>
+        <p class="caption">Ganancia contable = (Ventas + Otros ingresos) − COGS − Gastos operativos.</p>
+      </article>
+    </div>
   </section>
 
-  <section id="filtros-reservas" class="filtros oculto">
-    <label>Desde <input type="date" id="r-desde"></label>
-    <label>Hasta <input type="date" id="r-hasta"></label>
-    <label>Tipo
-      <select id="r-tipo">
-        <option value="todas">Todas</option>
-        <option value="fisica">Física</option>
-        <option value="virtual">Virtual</option>
-      </select>
-    </label>
-    <label>Movimiento
-      <select id="r-mov">
-        <option value="todos">Todos</option>
-        <option value="alta">Alta</option>
-        <option value="liberacion">Liberación</option>
-      </select>
-    </label>
-    <button id="r-buscar" class="btn">Buscar</button>
+  <!-- ================= GANANCIAS ================= -->
+  <section id="sec-ganancias" class="tab-panel">
+    <div class="grid grid-2">
+      <article class="card">
+        <h3>KPIs de Ganancias (P&L)</h3>
+        <div class="kpi"><span class="label">Ingresos por ventas</span><div id="g-ventas" class="value">$ 0,00</div></div>
+        <div class="kpi"><span class="label">COGS</span><div id="g-cogs" class="value">$ 0,00</div></div>
+        <div class="kpi"><span class="label">Otros ingresos</span><div id="g-otros" class="value">$ 0,00</div></div>
+        <div class="kpi"><span class="label">Gastos operativos</span><div id="g-opex" class="value">$ 0,00</div></div>
+        <div class="hr"></div>
+        <div class="kpi">
+          <b>Margen bruto</b>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div id="g-mb" class="value">$ 0,00</div>
+            <span id="g-mb-pct" class="pill">0%</span>
+          </div>
+        </div>
+        <div class="kpi">
+          <b>Ganancia neta</b>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div id="g-net" class="value">$ 0,00</div>
+            <span id="g-net-pct" class="pill">0%</span>
+          </div>
+        </div>
+        <p class="caption">Usa <b>detalle_venta</b>, <b>productos.precio_proveedor</b> y <b>finanzas</b> (sin reservas/transferencias).</p>
+      </article>
+
+      <article class="card">
+        <h3>Detalle contable y caja</h3>
+        <div class="kpi"><span class="label">Egresos por compras (proveedores)</span><div id="g-compras" class="value">$ 0,00</div></div>
+        <div class="hr"></div>
+        <h3>Flujo de caja (mes)</h3>
+        <div class="kpi"><span class="label">Ingresos de caja</span><div id="g-cf-ing" class="value">$ 0,00</div></div>
+        <div class="kpi"><span class="label">Egresos de caja</span><div id="g-cf-egr" class="value">$ 0,00</div></div>
+        <div class="kpi"><b>Neto de caja</b><div id="g-cf-net" class="value">$ 0,00</div></div>
+        <p class="caption">El neto de caja puede diferir de la ganancia por compras, reservas y timing de cobros/pagos.</p>
+      </article>
+    </div>
+
+    <article class="card" style="margin-top:14px">
+      <div class="toolbar">
+        <h3 style="margin:0">Top productos por margen</h3>
+        <div class="spacer"></div>
+        <label class="muted">Mostrar</label>
+        <select id="top-limit">
+          <option>10</option><option selected>15</option><option>25</option><option>50</option>
+        </select>
+        <button id="btn-export-top" class="btn ghost btn-sm">Exportar CSV</button>
+      </div>
+      <div style="overflow:auto">
+        <table class="table-compact">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Producto</th>
+              <th class="right">Unid.</th>
+              <th class="right">Ingresos</th>
+              <th class="right">COGS</th>
+              <th class="right">Margen</th>
+              <th class="right">%</th>
+            </tr>
+          </thead>
+          <tbody id="top-rows">
+            <tr><td colspan="7" class="muted">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption">Margen = Ingresos − COGS. % = Margen/Ingresos.</p>
+    </article>
   </section>
 
-  <main>
-    <table id="tabla-caja">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Cuenta</th>
-          <th>Tipo</th>
-          <th>Monto</th>
-          <th>Descripción</th>
-          <th>Referencia</th>
-        </tr>
-      </thead>
-      <tbody id="caja-rows"></tbody>
-    </table>
+  <!-- ================= MOVIMIENTOS ================= -->
+  <section id="sec-movs" class="tab-panel">
+    <article class="card" style="margin-bottom:12px">
+      <h3>Filtros</h3>
+      <div class="toolbar">
+        <div class="form" style="grid-template-columns: repeat(5, minmax(160px, 1fr)); gap:10px; width:100%;">
+          <div>
+            <label>Desde</label>
+            <input type="date" id="m-desde"/>
+          </div>
+          <div>
+            <label>Hasta</label>
+            <input type="date" id="m-hasta"/>
+          </div>
+          <div>
+            <label>Cuenta</label>
+            <select id="m-cuenta">
+              <option value="todas">Todas</option>
+              <option value="fisica">Caja física</option>
+              <option value="virtual">Caja virtual</option>
+            </select>
+          </div>
+          <div>
+            <label>Tipo</label>
+            <select id="m-tipo">
+              <option value="todos">Todos</option>
+              <option value="ingreso">Ingreso</option>
+              <option value="egreso">Egreso</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="reserva">Reserva</option>
+              <option value="ajuste">Ajuste</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:end">
+            <button id="m-buscar" class="btn">Buscar</button>
+          </div>
+        </div>
+      </div>
+    </article>
 
-    <table id="tabla-reservas" class="oculto">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Tipo</th>
-          <th>Movimiento</th>
-          <th>Monto</th>
-          <th>Descripción</th>
-          <th>Referencia</th>
-        </tr>
-      </thead>
-      <tbody id="reservas-rows"></tbody>
-    </table>
-  </main>
+    <article class="card">
+      <h3>Movimientos de caja</h3>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Cuenta</th>
+              <th>Tipo</th>
+              <th>Descripción</th>
+              <th>Referencia</th>
+              <th class="right">Monto</th>
+            </tr>
+          </thead>
+          <tbody id="mov-rows">
+            <tr><td colspan="6" class="muted">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </section>
 
-  <script type="module" src="js/finanzas.js"></script>
+  <!-- ================= RESERVAS ================= -->
+  <section id="sec-reservas" class="tab-panel">
+    <div class="grid grid-2">
+      <article class="card">
+        <h3>Gestionar reservas</h3>
+        <div class="inline-controls">
+          <div>
+            <label>Tipo</label>
+            <select id="r-tipo">
+              <option value="fisica">Reserva en caja física</option>
+              <option value="virtual">Reserva en caja virtual</option>
+            </select>
+          </div>
+          <div>
+            <label>Monto</label>
+            <input id="r-monto" type="number" min="0" step="0.01" placeholder="0,00"/>
+          </div>
+        </div>
+        <div class="form">
+          <div>
+            <label>Descripción (opcional)</label>
+            <input id="r-desc" placeholder="Detalle"/>
+          </div>
+          <div class="toolbar">
+            <button id="r-crear" class="btn">Crear reserva</button>
+            <button id="r-liberar" class="btn secondary">Liberar reserva</button>
+          </div>
+          <p class="caption">Disponible — Física: <b id="r-disp-f">$ 0,00</b> · Virtual: <b id="r-disp-v">$ 0,00</b></p>
+          <div class="card-footer">Las reservas mueven dinero entre <b>caja</b> y <b>reservas</b>; no afectan la ganancia contable.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Historial de reservas</h3>
+        <div class="toolbar">
+          <div class="form" style="grid-template-columns: repeat(5, minmax(160px, 1fr)); gap:10px; width:100%;">
+            <div>
+              <label>Desde</label>
+              <input type="date" id="rh-desde"/>
+            </div>
+            <div>
+              <label>Hasta</label>
+              <input type="date" id="rh-hasta"/>
+            </div>
+            <div>
+              <label>Tipo</label>
+              <select id="rh-tipo">
+                <option value="todas">Todas</option>
+                <option value="fisica">Física</option>
+                <option value="virtual">Virtual</option>
+              </select>
+            </div>
+            <div>
+              <label>Movimiento</label>
+              <select id="rh-mov">
+                <option value="todos">Todos</option>
+                <option value="alta">Alta</option>
+                <option value="liberacion">Liberación</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:end">
+              <button id="rh-buscar" class="btn">Buscar</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Movimiento</th>
+                <th class="right">Monto</th>
+                <th>Descripción</th>
+                <th>Referencia</th>
+              </tr>
+            </thead>
+            <tbody id="res-rows">
+              <tr><td colspan="6" class="muted">Sin datos</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="js/finanzas.js"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 // ===== Config =====
 const API = 'http://localhost:3000/api';
+const UMBRAL_ALERTA = 2; // Notificar si stock <= 2
 
 // ===== Helpers (sin módulos) =====
 function getToken() {
@@ -14,6 +15,9 @@ function authHeaders(extra = {}) {
 }
 function fmt(n) {
   return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtInt(n) {
+  return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 function normalizarRol(rol) {
   return String(rol || '')
@@ -52,6 +56,14 @@ const montoFinalInput = document.getElementById('monto-final');
 const spanUsuario = document.getElementById('usuario-logueado');
 const grid = document.getElementById('menu-grid');
 
+// Notificaciones
+const notifBell   = document.getElementById('notif-bell');
+const notifPanel  = document.getElementById('notif-panel');
+const notifBadge  = document.getElementById('notif-badge');
+const notifList   = document.getElementById('notif-list');
+const notifEmpty  = document.getElementById('notif-empty');
+const notifRefresh= document.getElementById('notif-refresh');
+
 // ===== Menú (se filtra por rol) =====
 const MENU = [
   { href: 'catalogo.html',     label: 'Catálogo',              icon: '🗂️', roles: ['dueno','duenio','admin','empleado'] },
@@ -60,11 +72,6 @@ const MENU = [
   { href: 'carrito.html',      label: 'Carrito',               icon: '🛒', roles: ['dueno','duenio','admin','empleado'] },
   { href: 'ventas.html',       label: 'Ventas',                icon: '💳', roles: ['dueno','duenio','admin','empleado'] },
   { href: 'devoluciones.html', label: 'Devoluciones',          icon: '↩️', roles: ['dueno','duenio','admin','empleado'] },
-  { href: 'proveedores.html',  label: 'Proveedores',           icon: '🚚', roles: ['dueno','duenio','admin','empleado'] },
-
-
-  // 🔹 NUEVO: Devoluciones (visible para todos)
-
 
   { href: 'caja.html',         label: 'Caja (diario)',         icon: '💼', roles: ['dueno','duenio','admin'] },
   { href: 'finanzas.html',     label: 'Finanzas',              icon: '📈', roles: ['dueno','duenio','admin'] },
@@ -72,7 +79,6 @@ const MENU = [
   { href: 'empleados.html',    label: 'Empleados',             icon: '👥', roles: ['dueno','duenio','admin'] },
   { href: 'pedidos.html',      label: 'Pedidos a Proveedores', icon: '🧾', roles: ['dueno','duenio','admin'] },
   { href: 'pagos.html',        label: 'Pagos',                 icon: '💵', roles: ['dueno','duenio','admin'] },
-
 ];
 
 // ===== Validación de sesión (solo “logueado”, no valida rol) =====
@@ -117,14 +123,11 @@ function configurarSaldosPorRol(rol) {
   const rolNorm = normalizarRol(rol);
   const esEmpleado = rolNorm === 'empleado';
 
-  // Mostrar todo por defecto
   [virtualWrap, totalWrap, div1, div2].forEach(el => el?.classList.remove('oculto'));
   saldoWrap?.classList.remove('solo-fisica');
 
   if (esEmpleado) {
-    // Ocultar Virtual y Total + divisores
     [virtualWrap, totalWrap, div1, div2].forEach(el => el?.classList.add('oculto'));
-    // Opcional: ajustar estilo cuando queda solo "Física"
     saldoWrap?.classList.add('solo-fisica');
   }
 }
@@ -224,6 +227,100 @@ async function cargarSaldos() {
   }
 }
 
+// ===== Notificaciones (stock bajo) =====
+function mapInventarioRow(v){
+  return {
+    variante_id: Number(v.id ?? v.variante_id),
+    producto_id: Number(v.producto_id ?? v.p_id ?? v.productoId),
+    nombre: v.producto_nombre || v.nombre || v.nombre_producto || 'Producto',
+    codigo: v.codigo || v.p_codigo || '',
+    color: v.color || '',
+    talle: v.talle || '',
+    stock: Number(v.stock ?? 0),
+    activo: v.activo ?? 1
+  };
+}
+
+async function cargarNotificacionesStockBajo(){
+  const token = getToken();
+  if (!token) return;
+  try{
+    const r = await fetch(`${API}/inventario`, { headers:{ Authorization:'Bearer '+token }});
+    if(!r.ok) throw new Error('No se pudo obtener inventario');
+    const data = await r.json();
+
+    const variantes = (Array.isArray(data) ? data : []).map(mapInventarioRow);
+    const bajos = variantes.filter(v => (v.activo ?? 1) && v.stock <= UMBRAL_ALERTA);
+
+    renderNotifs(bajos);
+  }catch(err){
+    console.error('Notificaciones:', err);
+    renderNotifs([]);
+  }
+}
+
+function renderNotifs(items){
+  // Badge
+  const n = items.length;
+  if (n > 0){
+    notifBadge.textContent = String(n);
+    notifBadge.style.display = '';
+  } else {
+    notifBadge.style.display = 'none';
+  }
+
+  // Lista
+  notifList.innerHTML = '';
+  if (n === 0){
+    notifEmpty.classList.remove('oculto');
+    return;
+  }
+  notifEmpty.classList.add('oculto');
+
+  items.forEach(v => {
+    const msg = `Stock bajo de ${v.nombre}${v.color ? ' – ' + v.color.toLowerCase() : ''}${v.talle ? ' / ' + v.talle : ''}`;
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = `
+      <div>
+        <div class="msg">${msg}</div>
+        <div class="meta">Variante #${v.variante_id}${v.codigo ? ` · Código: ${v.codigo}` : ''}</div>
+      </div>
+      <div class="qty">(${fmtInt(v.stock)})</div>
+    `;
+    notifList.appendChild(el);
+  });
+}
+
+function toggleNotifPanel(force){
+  const shouldOpen = (typeof force === 'boolean') ? force : notifPanel.classList.contains('oculto');
+  if (shouldOpen) notifPanel.classList.remove('oculto');
+  else notifPanel.classList.add('oculto');
+}
+
+function wireNotifs(){
+  // Abrir/cerrar panel
+  notifBell?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleNotifPanel();
+  });
+  // Refrescar
+  notifRefresh?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    cargarNotificacionesStockBajo();
+  });
+  // Cerrar con click afuera
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.notif-wrap')) {
+      notifPanel?.classList.add('oculto');
+    }
+  });
+  // Cerrar con Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') notifPanel?.classList.add('oculto');
+  });
+}
+
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', async () => {
   // Validación de usuario logueado (sin validar rol Dueño)
@@ -241,4 +338,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Cargar info de caja y saldos
   await refreshEstadoYSaldos();
+
+  // Notificaciones
+  wireNotifs();
+  await cargarNotificacionesStockBajo();
+  setInterval(cargarNotificacionesStockBajo, 60000);
 });

@@ -1,16 +1,388 @@
-:root{--bg:#0f172a;--card:#111827;--text:#e5e7eb;--muted:#94a3b8;--green:#22c55e;--red:#ef4444}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#0b1220;border-bottom:1px solid #1f2937}
-.right{display:flex;gap:10px;flex-wrap:wrap}
-.btn{background:#1f2937;border:1px solid #374151;color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer;text-decoration:none}
-.tabs{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid #1f2937}
-.tab{background:#0b1220;border:1px solid #1f2937;color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
-.tab.active{outline:1px solid #334155}
-.filtros{display:flex;gap:12px;align-items:end;padding:12px 16px;border-bottom:1px solid #1f2937}
-.filtros input,.filtros select{background:#0f172a;border:1px solid #334155;color:var(--text);padding:6px 8px;border-radius:8px}
-main{padding:12px 16px}
-table{width:100%;border-collapse:collapse;background:#0b1220;border:1px solid #1f2937;border-radius:10px;overflow:hidden}
-thead th{background:#111827;text-align:left;padding:10px;border-bottom:1px solid #1f2937}
-tbody td{padding:10px;border-bottom:1px solid #1f2937}
-.ingreso{color:var(--green)} .egreso{color:var(--red)}
-.oculto{display:none}
+/* ==========================================================================
+   Finanzas Unificado — Hilos y Coo
+   Pantallas: Resumen / Ganancias / Movimientos / Reservas
+   Archivo: css/finanzas.css
+   ========================================================================== */
+
+/* --------- Variables y base --------- */
+:root{
+  --bg: #0a1220;
+  --panel: #0b1220;
+  --panel-2: #0f172a;
+  --border: #223047;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --primary: #2563eb;
+  --primary-2: #3b82f6;
+  --danger: #b91c1c;
+  --success: #16a34a;
+  --warning: #eab308;
+  --accent: #60a5fa;
+
+  --radius: 14px;
+  --radius-sm: 10px;
+
+  --shadow-1: 0 6px 18px rgba(0,0,0,.15);
+  --shadow-2: 0 10px 26px rgba(0,0,0,.22);
+}
+
+*{ box-sizing: border-box; }
+html, body{
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+}
+
+/* Scrollbar suave (webkit) */
+*::-webkit-scrollbar{ width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb{ background: #1f2937; border-radius: 8px; }
+*::-webkit-scrollbar-track{ background: #0b1220; }
+
+/* Utilidades */
+.oculto{ display: none !important; }
+.muted{ color: var(--muted); }
+.right{ text-align: right; }
+.center{ text-align: center; }
+
+/* --------- Topbar --------- */
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.topbar .brand{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.topbar .logo{ font-size: 22px; }
+.topbar h1{
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+.topbar .right{
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.topbar .right span b{ color: #fff; }
+
+/* --------- Contenedor --------- */
+.container{
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px;
+}
+.section-title{
+  margin: 6px 0 14px;
+  font-size: 16px;
+  color: #dbeafe;
+}
+
+/* --------- Botones --------- */
+.btn{
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: transform .04s ease, box-shadow .2s ease, background .2s ease;
+  box-shadow: var(--shadow-1);
+  text-decoration: none; /* para <a class="btn"> */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn:hover{ background: var(--primary-2); }
+.btn:active{ transform: translateY(1px); }
+.btn.secondary{ background: #334155; }
+.btn.secondary:hover{ background: #475569; }
+.btn.danger{ background: var(--danger); }
+.btn.danger:hover{ background: #dc2626; }
+.btn.ghost{
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn.ghost:hover{ border-color: #3b82f6; }
+
+/* Botones pequeños */
+.btn-sm{ padding: 6px 10px; border-radius: 8px; font-size: 13px; }
+
+/* --------- Tabs --------- */
+.tabs{
+  display: flex;
+  gap: 8px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(to bottom, rgba(11,18,32,.85), rgba(11,18,32,.4));
+  position: sticky;
+  top: 58px; /* debajo de topbar */
+  z-index: 9;
+  backdrop-filter: blur(4px);
+}
+
+/* Soporta .tab y .tab-btn (por compatibilidad) */
+.tab, .tab-btn{
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.tab:hover, .tab-btn:hover{ border-color: var(--primary-2); }
+.tab.active, .tab-btn.active{
+  background: #1f2937;
+  border-color: var(--primary-2);
+  color: #dbeafe;
+}
+.tab-panel{ display: none; }
+.tab-panel.show{ display: block; }
+
+/* --------- Tarjetas / Grid --------- */
+.grid{ display: grid; gap: 14px; }
+.grid-2{ grid-template-columns: repeat(2, minmax(260px, 1fr)); }
+.grid-3{ grid-template-columns: repeat(3, minmax(220px, 1fr)); }
+.grid-4{ grid-template-columns: repeat(4, minmax(180px, 1fr)); }
+
+.card{
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow-1);
+}
+.card h3{
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: #cbd5e1;
+}
+.card .hr{
+  height: 1px;
+  background: var(--border);
+  margin: 10px 0;
+}
+
+/* --------- KPIs --------- */
+.kpi{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+.kpi .label{ color: var(--muted); }
+.kpi .value{
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+}
+.kpi .sub{
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Tarjeta KPI grande */
+.kpi-card{
+  display: grid;
+  gap: 6px;
+}
+.kpi-title{ color: #cbd5e1; font-size: 14px; }
+.kpi-value{ font-size: 30px; font-weight: 800; color: #fff; }
+.kpi-note{ font-size: 12px; color: var(--muted); }
+
+/* Badges/Pills de tipo */
+.pill{
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: #0f172a;
+  color: var(--text);
+}
+.pill.ingreso{ color: #22c55e; border-color: #064e3b; }
+.pill.egreso{ color: #ef4444; border-color: #7f1d1d; }
+.pill.transferencia{ color: var(--accent); }
+.pill.reserva{ color: var(--warning); }
+.pill.ajuste{ color: #f472b6; }
+
+/* Etiquetas auxiliares */
+.tag{
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+/* --------- Formularios --------- */
+.form{ display: grid; gap: 10px; }
+.form .row{ display: flex; gap: 8px; align-items: center; }
+.form label{ font-size: 13px; color: #cbd5e1; display: block; margin-bottom: 4px; }
+.form input, .form select, .form textarea{
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 9px 10px;
+  outline: none;
+}
+.form input:focus, .form select:focus, .form textarea:focus{
+  border-color: var(--primary-2);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+}
+.form .help{ font-size: 12px; color: var(--muted); }
+
+/* Inline selects/inputs */
+.inline-controls{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+/* --------- Tablas --------- */
+table{
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-1);
+}
+thead th{
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #0e172a;
+  color: #93c5fd;
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+tbody td{
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+tbody tr:hover{ background: rgba(255,255,255,.02); }
+
+/* Alineaciones */
+td.right, th.right{ text-align: right; }
+
+/* Tabla compacta (opcional) */
+.table-compact thead th, .table-compact tbody td{ padding: 8px; }
+
+/* Estados +/− en montos */
+.qty-pos{ color: #22c55e; font-weight: 600; }
+.qty-neg{ color: #ef4444; font-weight: 600; }
+
+/* --------- Toolbars / Filtros superiores --------- */
+.toolbar{
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.toolbar .spacer{ flex: 1; }
+
+/* --------- Toast genérico (por si querés usar clase en vez de inline style) --------- */
+.toast{
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  background: #065f46;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  z-index: 9999;
+  box-shadow: var(--shadow-2);
+  border: 1px solid rgba(255,255,255,.12);
+}
+.toast.error{ background: #7f1d1d; }
+
+/* --------- Cards especiales (Ganancias) --------- */
+.stats-grid{
+  display: grid;
+  grid-template-columns: repeat(5, minmax(180px, 1fr));
+  gap: 12px;
+}
+.stat{
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+.stat .title{ color: #cbd5e1; font-size: 13px; margin-bottom: 6px; }
+.stat .big{ font-size: 24px; font-weight: 800; color: #fff; }
+.stat .note{ font-size: 12px; color: var(--muted); }
+
+/* Tarjeta doble columna */
+.split-2{
+  display: grid;
+  grid-template-columns: 1.1fr .9fr;
+  gap: 14px;
+}
+
+/* --------- Indicadores de diferencia --------- */
+.delta{
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.delta.up{ color: #22c55e; }
+.delta.down{ color: #ef4444; }
+
+/* --------- Footer pequeño dentro de cards --------- */
+.card-footer{
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* --------- Responsive --------- */
+@media (max-width: 1100px){
+  .grid-3{ grid-template-columns: 1fr 1fr; }
+  .stats-grid{ grid-template-columns: repeat(3, minmax(180px, 1fr)); }
+  .split-2{ grid-template-columns: 1fr; }
+}
+@media (max-width: 860px){
+  .grid-3, .grid-2{ grid-template-columns: 1fr; }
+  .topbar .right{ gap: 10px; }
+  .tabs{ top: 64px; }
+}
+@media (max-width: 560px){
+  .topbar{ flex-wrap: wrap; gap: 8px; }
+  .topbar .right{ width: 100%; justify-content: space-between; }
+  .tabs{ position: static; }
+  .inline-controls{ grid-template-columns: 1fr; }
+}
+
+/* --------- Helpers visuales --------- */
+.hr{ height: 1px; background: var(--border); margin: 10px 0; }
+.caption{ font-size: 12px; color: var(--muted); }
+.badge{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #111827;
+  border: 1px solid var(--border);
+  color: #d1d5db;
+  font-size: 12px;
+}

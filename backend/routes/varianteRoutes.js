@@ -1,33 +1,34 @@
-// backend/routes/varianteRoutes.js
 const express = require('express');
 const router = express.Router();
 
+// Ojo: usás carpeta singular "middleware" en tu proyecto
 const verificarToken = require('../middleware/authMiddleware');
+
 const {
   crearVariante,
-  listarVariantes,              // NUEVO -> /api/variantes?producto_id=1
-  listarVariantesPorProducto,   // Compat -> /api/variantes/:producto_id
-  obtenerVariante,              // NUEVO -> /api/variantes/id/:id
+  listarVariantesPorProducto,
   editarVariante,
   eliminarVariante,
-  actualizarStock
+  actualizarStock,
+  obtenerInventario,
+  obtenerMovimientosInventario
 } = require('../controllers/varianteController');
 
-// Crear
+// CRUD variantes
 router.post('/variantes', verificarToken, crearVariante);
 
-// Listar (nuevo con filtros por query) -> ***ESTA ES LA QUE USA devoluciones.js***
-router.get('/variantes', verificarToken, listarVariantes);
-
-// Obtener por ID (evitamos conflicto con :producto_id usando prefijo /id/)
-router.get('/variantes/id/:id', verificarToken, obtenerVariante);
-
-// Compat anterior: listar por producto_id como parámetro
+// ✅ Acepta ambas formas:
+//    - /api/variantes?producto_id=5
+//    - /api/variantes/5
+router.get('/variantes', verificarToken, listarVariantesPorProducto);
 router.get('/variantes/:producto_id', verificarToken, listarVariantesPorProducto);
 
-// Editar / eliminar / stock
 router.put('/variantes/:id', verificarToken, editarVariante);
 router.delete('/variantes/:id', verificarToken, eliminarVariante);
+
+// Inventario
+router.get('/inventario', verificarToken, obtenerInventario);
 router.put('/actualizarStock/:id', verificarToken, actualizarStock);
+router.get('/inventario/movimientos', verificarToken, obtenerMovimientosInventario);
 
 module.exports = router;

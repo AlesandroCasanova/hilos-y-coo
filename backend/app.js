@@ -1,3 +1,4 @@
+// app.js
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -12,24 +13,24 @@ console.log('Carpeta de imagenes:', path.join(__dirname, 'public', 'imagenes_pro
 app.use('/imagenes_productos', express.static(path.join(__dirname, 'public', 'imagenes_productos')));
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-
 // Importar rutas
-const authRoutes = require('./routes/authRoutes');
-const usuarioRoutes = require('./routes/usuarioRoutes');
-const productoRoutes = require('./routes/productoRoutes');
-const varianteRoutes = require('./routes/varianteRoutes');
-const ventaRoutes = require('./routes/ventaRoutes');
-const proveedorRoutes = require('./routes/proveedorRoutes');
-const finanzasRoutes = require('./routes/finanzasRoutes');
-const categoriaRoutes = require('./routes/categoriaRoutes');
-const pagosRoutes = require('./routes/pagosRoutes');
-const inventarioRoutes = require('./routes/inventarioRoutes');
-const cajaRoutes = require('./routes/cajaRoutes');
-const pedidosRoutes = require('./routes/pedidosRoutes');
-const devolucionRoutes = require('./routes/devolucionRoutes');
+const authRoutes         = require('./routes/authRoutes');
+const usuarioRoutes      = require('./routes/usuarioRoutes');
+const productoRoutes     = require('./routes/productoRoutes');
+const varianteRoutes     = require('./routes/varianteRoutes');
+const ventaRoutes        = require('./routes/ventaRoutes');
+const proveedorRoutes    = require('./routes/proveedorRoutes');
+const finanzasRoutes     = require('./routes/finanzasRoutes');
+const categoriaRoutes    = require('./routes/categoriaRoutes');
+const pagosRoutes        = require('./routes/pagosRoutes');
+const inventarioRoutes   = require('./routes/inventarioRoutes');
+const cajaRoutes         = require('./routes/cajaRoutes');
+const pedidosRoutes      = require('./routes/pedidosRoutes');
+const devolucionRoutes   = require('./routes/devolucionRoutes');
 const ventaDetalleRoutes = require('./routes/ventaDetalleRoutes');
 
-
+// ✅ NUEVO: Ganancias mensuales
+const gananciasRoutes    = require('./routes/gananciasRoutes');
 
 // Usar rutas
 app.use('/api', authRoutes);
@@ -46,6 +47,9 @@ app.use('/api/caja', cajaRoutes);
 app.use('/api', pedidosRoutes);
 app.use('/api', devolucionRoutes);
 app.use('/api', ventaDetalleRoutes);
+
+// ✅ Montar ganancias en subruta dedicada
+app.use('/api/ganancias', gananciasRoutes);
 
 // Levantar servidor
 const PORT = process.env.PORT || 3000;

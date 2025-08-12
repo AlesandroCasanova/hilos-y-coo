@@ -7,46 +7,119 @@
   <link rel="stylesheet" href="css/inventario.css" />
 </head>
 <body>
-  <div class="sidebar" id="sidebar">
-    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
-    <h2>Hilos y Coo</h2>
-    <ul>
-      <li><a href="dashboard.html">📊 Dashboard</a></li>
-      <li><a href="productos.html">🧵 Productos</a></li>
-      <li><a href="inventario.html">📦 Inventario</a></li>
-      <li><a href="ventas.html">💸 Ventas</a></li>
-      <li><a href="proveedores.html">🚚 Proveedores</a></li>
-      <li><a href="usuarios.html">👥 Empleados</a></li>
-      <li><a href="pagos.html">💰 Pagos</a></li>
-      <li><a href="impuestos.html">🧾 Impuestos</a></li>
-      <li><a href="finanzas.html">📈 Finanzas</a></li>
-      <li><a href="pedidos.html">📥 Pedidos</a></li>
-      <li><a href="index.html" onclick="localStorage.clear()">🚪 Salir</a></li>
-    </ul>
+  <header class="topbar">
+    <div class="brand">
+      <span class="pill">Hilos y Coo</span>
+      <h1>Inventario</h1>
+    </div>
+    <div class="controls">
+      <span id="badge-global" class="badge" style="display:none;">0 alertas</span>
+      <button id="btn-refrescar" class="btn">Refrescar</button>
+      <button id="btn-salir" class="btn btn-warn">Salir</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="toolbar">
+      <input id="buscar" type="search" placeholder="Buscar por producto, código, color o talle…">
+      <label class="chk"><input id="solo-alertas" type="checkbox"> Ver productos con stock bajo</label>
+      <div></div>
+    </div>
+
+    <div id="notice" class="notice">Hay productos con <b>STOCK BAJO</b>. Revisá y reponé a la brevedad.</div>
+
+    <div id="inventario-grid" class="grid"></div>
+
+    <div class="footer">© Hilos y Coo</div>
+  </main>
+
+  <!-- MODAL DE VARIANTES -->
+  <div id="modal" class="modal oculto">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="mh-title">
+          <div class="mh-line1">
+            <img id="m-img" class="mh-img" alt="img">
+            <div>
+              <div id="m-nombre" class="mh-name">Producto</div>
+              <div id="m-mini" class="mh-mini">
+                ID: <span id="m-id">—</span> ·
+                Código: <span id="m-codigo">—</span> ·
+                Categoría: <span id="m-categoria">—</span> ·
+                Proveedor: <span id="m-proveedor">—</span> ·
+                Precio prov: $<span id="m-pprov">0</span> ·
+                Precio venta: $<span id="m-pventa">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="mh-actions">
+            <button id="btn-historial" class="btn btn-ghost">Historial</button>
+            <button id="btn-cerrar" class="btn btn-warn">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <table class="variants">
+          <thead>
+            <tr>
+              <th style="width:90px;">Var ID</th>
+              <th>Talle/Medida</th>
+              <th>Color</th>
+              <th style="width:120px;">Stock</th>
+              <th style="width:110px;">Estado</th>
+              <th style="width:110px;">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="m-tbody"></tbody>
+        </table>
+
+        <!-- HISTORIAL MEJORADO -->
+        <div id="historial" class="historial oculto">
+          <div class="hist-toolbar">
+            <select id="hist-var"></select>
+            <select id="hist-tipo">
+              <option value="">Todos los tipos</option>
+              <option value="ajuste">Ajuste</option>
+              <option value="venta">Venta</option>
+              <option value="devolucion">Devolución</option>
+              <option value="ingreso">Ingreso</option>
+              <option value="egreso">Egreso</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="reserva">Reserva</option>
+              <option value="ajuste_inicial">Ajuste inicial</option>
+            </select>
+            <input id="hist-q" type="search" placeholder="Buscar en referencia o descripción…">
+            <select id="hist-limit">
+              <option value="50">Últimos 50</option>
+              <option value="100">Últimos 100</option>
+              <option value="200">Últimos 200</option>
+            </select>
+            <div class="hist-spacer"></div>
+            <button id="hist-export" class="btn btn-ghost">Exportar CSV</button>
+          </div>
+
+          <div class="hist-table-wrap">
+            <table id="hist-table">
+              <thead>
+                <tr>
+                  <th class="th-fecha">Fecha</th>
+                  <th>Var ID</th>
+                  <th>Tipo</th>
+                  <th>Cant</th>
+                  <th>Ref</th>
+                  <th>Desc</th>
+                </tr>
+              </thead>
+              <tbody id="hist-rows"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- /HISTORIAL -->
+      </div>
+    </div>
   </div>
 
-  <div class="contenido">
-    <h1>Inventario</h1>
-    <table id="tablaInventario">
-      <thead>
-        <tr>
-          <th>Imagen</th>
-          <th>Producto</th>
-          <th>Talle</th>
-          <th>Color</th>
-          <th>Stock</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <script>
-    function toggleSidebar() {
-      document.getElementById("sidebar").classList.toggle("collapsed");
-    }
-  </script>
   <script type="module" src="js/inventario.js"></script>
 </body>
 </html>

@@ -404,3 +404,61 @@ FROM movimientos_reserva;
 ALTER TABLE movimientos_caja
 ADD COLUMN sesion_id INT NULL,
 ADD FOREIGN KEY (sesion_id) REFERENCES sesiones_caja(id);
+
+CREATE TABLE IF NOT EXISTS devoluciones (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  venta_id INT NOT NULL,
+  usuario_id INT NULL,
+  fecha DATETIME NOT NULL,
+  caja_tipo ENUM('fisica','virtual') NOT NULL,
+  motivo VARCHAR(255) DEFAULT '',
+  total_reintegro DECIMAL(12,2) NOT NULL DEFAULT 0,
+  total_diferencia DECIMAL(12,2) NOT NULL DEFAULT 0,
+  observaciones TEXT,
+  INDEX (venta_id)
+);
+
+CREATE TABLE IF NOT EXISTS devolucion_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  devolucion_id INT NOT NULL,
+  venta_item_id INT NOT NULL,
+  producto_id INT NOT NULL,
+  variante_id_devuelta INT NOT NULL,
+  cantidad_devuelta DECIMAL(10,2) NOT NULL,
+  precio_unit_devuelto DECIMAL(12,2) NOT NULL,
+  subtotal_devuelto DECIMAL(12,2) NOT NULL,
+  variante_id_entregada INT NULL,
+  cantidad_entregada DECIMAL(10,2) NULL,
+  precio_unit_entregado DECIMAL(12,2) NULL,
+  subtotal_entregado DECIMAL(12,2) NULL,
+  INDEX (devolucion_id),
+  INDEX (venta_item_id)
+);
+
+-- Log de inventario (si no lo tenés)
+CREATE TABLE IF NOT EXISTS inventario_movimientos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  fecha DATETIME NOT NULL,
+  producto_id INT NOT NULL,
+  variante_id INT NOT NULL,
+  tipo VARCHAR(50) NOT NULL,
+  cantidad DECIMAL(10,2) NOT NULL,
+  referencia_tipo VARCHAR(50) NULL,
+  referencia_id INT NULL,
+  INDEX (variante_id)
+);
+
+-- Movimientos de caja (formato que tu UI de caja ya espera)
+CREATE TABLE IF NOT EXISTS caja_movimientos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  fecha DATETIME NOT NULL,
+  cuenta ENUM('caja_fisica','caja_virtual') NOT NULL,
+  tipo VARCHAR(80) NOT NULL,           -- 'devolucion' | 'diferencia por cambio'
+  signo TINYINT NOT NULL,              -- +1 ingreso, -1 egreso
+  monto DECIMAL(12,2) NOT NULL,
+  descripcion VARCHAR(255) NULL,
+  referencia_tipo VARCHAR(50) NULL,
+  referencia_id INT NULL,
+  INDEX (fecha),
+  INDEX (referencia_tipo, referencia_id)
+);
