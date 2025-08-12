@@ -1,20 +1,72 @@
+// js/finanzas.js
 import { obtenerToken } from './utils.js';
-const API = 'http://localhost:3000/api';
-const token = obtenerToken();
-const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
 
-document.addEventListener('DOMContentLoaded', () => {
+const API = 'http://localhost:3000/api';
+
+// --- Helpers: headers con token fresco
+function authHeaders() {
+  const token = obtenerToken();
+  return {
+    'Content-Type': 'application/json',
+    Authorization: 'Bearer ' + token
+  };
+}
+
+// --- Normalizar rol (quita tildes, case, espacios)
+function normalizarRol(rol) {
+  return String(rol || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .trim().toLowerCase();
+}
+const ROLES_PERMITIDOS = new Set(['duenio', 'dueno']); // agregar 'admin' si querés
+
+// --- Validar sesión: alerta y redirect si no hay token o es inválido
+async function validarSesion() {
+  const token = obtenerToken();
+  if (!token) {
+    alert('Acceso denegado: iniciá sesión para continuar.');
+    window.location.href = 'login.html';
+    return null;
+  }
+  try {
+    const res = await fetch(`${API}/usuarios/me`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('no-auth');
+    const data = await res.json();
+    return data.usuario;
+  } catch (e) {
+    try { localStorage.removeItem('token'); localStorage.removeItem('usuario'); } catch {}
+    alert('Acceso denegado: tu sesión expiró o es inválida. Volvé a iniciar sesión.');
+    window.location.href = 'login.html';
+    return null;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Guard de sesión
+  const usuario = await validarSesion();
+  if (!usuario) return;
+
+  // Guard de rol
+  const rolNorm = normalizarRol(usuario.rol);
+  if (!ROLES_PERMITIDOS.has(rolNorm)) {
+    alert('Acceso denegado: esta sección es solo para el Dueño.');
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
+  // UI inicial
   setHoySemana();
-  cargarSaldos();
+  await cargarSaldos();
 
   // Tabs
-  document.getElementById('tab-caja').addEventListener('click', () => toggleTab('caja'));
-  document.getElementById('tab-reservas').addEventListener('click', () => toggleTab('reservas'));
+  document.getElementById('tab-caja')?.addEventListener('click', () => toggleTab('caja'));
+  document.getElementById('tab-reservas')?.addEventListener('click', () => toggleTab('reservas'));
 
-  document.getElementById('c-buscar').addEventListener('click', buscarCaja);
-  document.getElementById('r-buscar').addEventListener('click', buscarReservas);
+  document.getElementById('c-buscar')?.addEventListener('click', buscarCaja);
+  document.getElementById('r-buscar')?.addEventListener('click', buscarReservas);
 
-  buscarCaja();
+  // Primera carga
+  await buscarCaja();
 });
 
 function setHoySemana() {
@@ -28,14 +80,32 @@ function setHoySemana() {
 
 async function cargarSaldos() {
   try {
-    const res = await fetch(`${API}/finanzas/saldos`, { headers });
+    const res = await fetch(`${API}/finanzas/saldos`, { headers: authHeaders() });
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        alert('Tu sesión no es válida. Iniciá sesión nuevamente.');
+        window.location.href = 'login.html';
+        return;
+      }
+      throw new Error('Error al obtener saldos');
+    }
     const data = await res.json();
-    setText('saldo-fisica', data.caja.fisica);
-    setText('saldo-virtual', data.caja.virtual);
-    setText('reservas-fisica', data.reservas.fisica);
-    setText('reservas-virtual', data.reservas.virtual);
-    setText('balance-total', data.total);
-  } catch (e) { console.error(e); }
+
+    // Soporta ambas formas: {caja:{fisica,virtual}, reservas:{...}, total} o {fisica,virtual}
+    const fisica = data?.caja?.fisica ?? data?.fisica ?? 0;
+    const virtual = data?.caja?.virtual ?? data?.virtual ?? 0;
+    const rFisica = data?.reservas?.fisica ?? data?.reservasFisica ?? 0;
+    const rVirtual = data?.reservas?.virtual ?? data?.reservasVirtual ?? 0;
+    const total = data?.total ?? (fisica + virtual + rFisica + rVirtual);
+
+    setText('saldo-fisica', fisica);
+    setText('saldo-virtual', virtual);
+    setText('reservas-fisica', rFisica);
+    setText('reservas-virtual', rVirtual);
+    setText('balance-total', total);
+  } catch (e) {
+    console.error('cargarSaldos:', e);
+  }
 }
 
 async function buscarCaja() {
@@ -46,10 +116,20 @@ async function buscarCaja() {
 
   const qs = new URLSearchParams({ desde, hasta, cuenta, tipo }).toString();
   try {
-    const res = await fetch(`${API}/finanzas/movimientos?${qs}`, { headers });
+    const res = await fetch(`${API}/finanzas/movimientos?${qs}`, { headers: authHeaders() });
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        alert('Tu sesión no es válida. Iniciá sesión nuevamente.');
+        window.location.href = 'login.html';
+        return;
+      }
+      throw new Error('Error al obtener movimientos de caja');
+    }
     const rows = await res.json();
     renderCaja(rows);
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error('buscarCaja:', e);
+  }
 }
 
 async function buscarReservas() {
@@ -60,10 +140,20 @@ async function buscarReservas() {
 
   const qs = new URLSearchParams({ desde, hasta, tipo, movimiento }).toString();
   try {
-    const res = await fetch(`${API}/finanzas/reservas?${qs}`, { headers });
+    const res = await fetch(`${API}/finanzas/reservas?${qs}`, { headers: authHeaders() });
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        alert('Tu sesión no es válida. Iniciá sesión nuevamente.');
+        window.location.href = 'login.html';
+        return;
+      }
+      throw new Error('Error al obtener reservas');
+    }
     const rows = await res.json();
     renderReservas(rows);
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error('buscarReservas:', e);
+  }
 }
 
 function renderCaja(rows) {

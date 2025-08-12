@@ -26,8 +26,8 @@ const pagosRoutes = require('./routes/pagosRoutes');
 const inventarioRoutes = require('./routes/inventarioRoutes');
 const cajaRoutes = require('./routes/cajaRoutes');
 const pedidosRoutes = require('./routes/pedidosRoutes');
-
-
+const devolucionRoutes = require('./routes/devolucionRoutes');
+const ventaDetalleRoutes = require('./routes/ventaDetalleRoutes');
 
 
 
@@ -44,6 +44,8 @@ app.use('/api', pagosRoutes);
 app.use('/api/inventario', inventarioRoutes);
 app.use('/api/caja', cajaRoutes);
 app.use('/api', pedidosRoutes);
+app.use('/api', devolucionRoutes);
+app.use('/api', ventaDetalleRoutes);
 
 // Levantar servidor
 const PORT = process.env.PORT || 3000;

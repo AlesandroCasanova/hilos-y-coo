@@ -8,52 +8,84 @@
 </head>
 <body>
   <header class="topbar">
-    <h1>Hilos y Coo</h1>
-
-    <div class="estado-caja">
-      <span id="estado-texto">Verificando caja física...</span>
-      <button id="btn-abrir-caja" class="oculto">Abrir caja</button>
-      <button id="btn-cerrar-caja" class="oculto">Cerrar caja</button>
-      <span id="saldos">
-        Física: <b id="saldo-fisica">0,00</b> |
-        Virtual: <b id="saldo-virtual">0,00</b> |
-        Total: <b id="saldo-total">0,00</b>
-      </span>
+    <div class="brand">
+      <div class="logo">🧵</div>
+      <h1>Hilos y Coo</h1>
     </div>
 
-    <button id="btn-logout" class="btn-logout">Salir</button>
+    <div class="session">
+      <span class="user-label">Usuario:</span>
+      <span id="usuario-logueado" class="user-value">Cargando…</span>
+      <button id="btn-logout" class="btn-logout" title="Cerrar sesión">Salir</button>
+    </div>
   </header>
 
-  <main>
-    <div class="menu-grid">
-      <a href="productos.html" class="menu-btn">Productos</a>
-      <a href="inventario.html" class="menu-btn">Inventario</a>
-      <a href="ventas.html" class="menu-btn">Ventas</a>
-      <a href="carrito.html" class="menu-btn">Carrito</a>
-      <a href="caja.html" class="menu-btn">Caja (diario)</a>
-      <a href="finanzas.html" class="menu-btn">Finanzas</a>
-      <a href="proveedores.html" class="menu-btn">Proveedores</a>
-      <a href="empleados.html" class="menu-btn">Empleados</a>
-      <a href="pedidos.html" class="menu-btn">Pedidos a Proveedores</a>
-      <a href="pagos.html" class="menu-btn">Pagos</a>
-      <a href="catalogo.html" class="menu-btn">Catálogo</a>
-    </div>
+  <main class="container">
+    <!-- Tarjetas de estado -->
+    <section class="cards">
+      <article class="card card-caja">
+        <div class="card-head">
+          <div class="card-icon">💼</div>
+          <h2>Estado de Caja Física</h2>
+        </div>
+        <p id="estado-texto" class="estado">Verificando caja física…</p>
+        <div class="actions">
+          <button id="btn-abrir-caja" class="btn primary oculto">Abrir caja</button>
+          <button id="btn-cerrar-caja" class="btn danger oculto">Cerrar caja</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div class="card-icon">🏦</div>
+          <h2>Saldos</h2>
+        </div>
+
+        <!-- IMPORTANTE: IDs de envoltorios para poder ocultar por rol -->
+        <div id="saldos-wrap" class="saldos">
+          <div id="saldo-fisica-wrap" class="saldo">
+            <span>Física</span>
+            <b id="saldo-fisica">0,00</b>
+          </div>
+
+          <div id="saldo-div-1" class="divider"></div>
+
+          <div id="saldo-virtual-wrap" class="saldo">
+            <span>Virtual</span>
+            <b id="saldo-virtual">0,00</b>
+          </div>
+
+          <div id="saldo-div-2" class="divider"></div>
+
+          <div id="saldo-total-wrap" class="saldo total">
+            <span>Total</span>
+            <b id="saldo-total">0,00</b>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Botonera dinámica por rol -->
+    <section>
+      <h2 class="section-title">Accesos rápidos</h2>
+      <div id="menu-grid" class="menu-grid"><!-- se llena por JS --></div>
+    </section>
   </main>
 
   <!-- Modal Cerrar Caja -->
-  <div id="modal-cerrar" class="modal oculto">
+  <div id="modal-cerrar" class="modal oculto" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-contenido">
-      <h3>Cerrar caja física</h3>
+      <h3 id="modal-title">Cerrar caja física</h3>
       <label for="monto-final">Monto final a dejar en caja</label>
       <input type="number" id="monto-final" min="0" step="0.01" />
       <div class="acciones">
-        <button id="confirmar-cierre">Confirmar</button>
-        <button id="cancelar-cierre">Cancelar</button>
+        <button id="confirmar-cierre" class="btn danger">Confirmar</button>
+        <button id="cancelar-cierre" class="btn">Cancelar</button>
       </div>
     </div>
   </div>
 
   <!-- Importá SOLO este JS (sin utils.js) -->
-  <script src="js/dashboard.js"></script>
+  <script type="module" src="js/dashboard.js"></script>
 </body>
 </html>

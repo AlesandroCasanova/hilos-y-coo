@@ -5,23 +5,31 @@ const API = 'http://localhost:3000/api';
 function getToken() {
   return localStorage.getItem('token') || '';
 }
-function authHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    Authorization: 'Bearer ' + getToken()
-  };
+function clearSession() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('usuario');
+}
+function authHeaders(extra = {}) {
+  return { Authorization: 'Bearer ' + getToken(), 'Content-Type': 'application/json', ...extra };
 }
 function fmt(n) {
   return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-function toast(msg) { try { alert(msg); } catch {} }
+function normalizarRol(rol) {
+  return String(rol || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .trim().toLowerCase(); // "Dueño" -> "dueno"
+}
 function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('usuario');
+  clearSession();
   window.location.href = 'login.html';
 }
+function alertAndRedirect(msg, href) {
+  alert(msg);
+  window.location.href = href;
+}
 
-// ===== DOM =====
+// ===== DOM refs =====
 const estadoTexto = document.getElementById('estado-texto');
 const btnAbrirCaja = document.getElementById('btn-abrir-caja');
 const btnCerrarCaja = document.getElementById('btn-cerrar-caja');
@@ -29,22 +37,99 @@ const saldoFisicaEl = document.getElementById('saldo-fisica');
 const saldoVirtualEl = document.getElementById('saldo-virtual');
 const saldoTotalEl = document.getElementById('saldo-total');
 
-const btnLogout = document.getElementById('btn-logout');
+const saldoWrap    = document.getElementById('saldos-wrap');
+const fisicaWrap   = document.getElementById('saldo-fisica-wrap');
+const virtualWrap  = document.getElementById('saldo-virtual-wrap');
+const totalWrap    = document.getElementById('saldo-total-wrap');
+const div1         = document.getElementById('saldo-div-1');
+const div2         = document.getElementById('saldo-div-2');
 
+const btnLogout = document.getElementById('btn-logout');
 const modalCerrar = document.getElementById('modal-cerrar');
 const confirmarCierreBtn = document.getElementById('confirmar-cierre');
 const cancelarCierreBtn = document.getElementById('cancelar-cierre');
 const montoFinalInput = document.getElementById('monto-final');
+const spanUsuario = document.getElementById('usuario-logueado');
+const grid = document.getElementById('menu-grid');
 
-// ===== Eventos =====
-document.addEventListener('DOMContentLoaded', () => {
-  // Si no hay token, mandamos al login
-  if (!getToken()) return logout();
+// ===== Menú (se filtra por rol) =====
+const MENU = [
+  { href: 'catalogo.html',     label: 'Catálogo',              icon: '🗂️', roles: ['dueno','duenio','admin','empleado'] },
+  { href: 'productos.html',    label: 'Productos',             icon: '📦', roles: ['dueno','duenio','admin','empleado'] },
+  { href: 'inventario.html',   label: 'Inventario',            icon: '📋', roles: ['dueno','duenio','admin','empleado'] },
+  { href: 'carrito.html',      label: 'Carrito',               icon: '🛒', roles: ['dueno','duenio','admin','empleado'] },
+  { href: 'ventas.html',       label: 'Ventas',                icon: '💳', roles: ['dueno','duenio','admin','empleado'] },
+  { href: 'devoluciones.html', label: 'Devoluciones',          icon: '↩️', roles: ['dueno','duenio','admin','empleado'] },
+  { href: 'proveedores.html',  label: 'Proveedores',           icon: '🚚', roles: ['dueno','duenio','admin','empleado'] },
 
-  // Cargar info
-  refreshEstadoYSaldos();
-});
 
+  // 🔹 NUEVO: Devoluciones (visible para todos)
+
+
+  { href: 'caja.html',         label: 'Caja (diario)',         icon: '💼', roles: ['dueno','duenio','admin'] },
+  { href: 'finanzas.html',     label: 'Finanzas',              icon: '📈', roles: ['dueno','duenio','admin'] },
+
+  { href: 'empleados.html',    label: 'Empleados',             icon: '👥', roles: ['dueno','duenio','admin'] },
+  { href: 'pedidos.html',      label: 'Pedidos a Proveedores', icon: '🧾', roles: ['dueno','duenio','admin'] },
+  { href: 'pagos.html',        label: 'Pagos',                 icon: '💵', roles: ['dueno','duenio','admin'] },
+
+];
+
+// ===== Validación de sesión (solo “logueado”, no valida rol) =====
+async function validarSesion() {
+  const token = getToken();
+  if (!token) {
+    alertAndRedirect('Acceso denegado: iniciá sesión para continuar.', 'login.html');
+    return null;
+  }
+  try {
+    const r = await fetch(`${API}/usuarios/me`, { headers: authHeaders() });
+    if (!r.ok) throw new Error('no-auth');
+    const data = await r.json();
+    return data.usuario;
+  } catch (e) {
+    console.error('validarSesion:', e);
+    clearSession();
+    alertAndRedirect('Acceso denegado: tu sesión expiró o es inválida. Volvé a iniciar sesión.', 'login.html');
+    return null;
+  }
+}
+
+// ===== Render de menú por rol =====
+function renderMenu(rol) {
+  const rolNorm = normalizarRol(rol);
+  grid.innerHTML = '';
+
+  const items = MENU.filter(it => it.roles.includes(rolNorm));
+  const finalItems = items.length ? items : MENU.filter(it => it.roles.includes('empleado'));
+
+  finalItems.forEach(({ href, label, icon }) => {
+    const a = document.createElement('a');
+    a.href = href;
+    a.className = 'menu-btn';
+    a.innerHTML = `<span class="icon">${icon}</span><span class="text">${label}</span>`;
+    grid.appendChild(a);
+  });
+}
+
+// ===== Saldos visibles por rol =====
+function configurarSaldosPorRol(rol) {
+  const rolNorm = normalizarRol(rol);
+  const esEmpleado = rolNorm === 'empleado';
+
+  // Mostrar todo por defecto
+  [virtualWrap, totalWrap, div1, div2].forEach(el => el?.classList.remove('oculto'));
+  saldoWrap?.classList.remove('solo-fisica');
+
+  if (esEmpleado) {
+    // Ocultar Virtual y Total + divisores
+    [virtualWrap, totalWrap, div1, div2].forEach(el => el?.classList.add('oculto'));
+    // Opcional: ajustar estilo cuando queda solo "Física"
+    saldoWrap?.classList.add('solo-fisica');
+  }
+}
+
+// ===== Eventos base =====
 btnLogout.addEventListener('click', logout);
 
 btnAbrirCaja.addEventListener('click', async () => {
@@ -56,15 +141,14 @@ btnAbrirCaja.addEventListener('click', async () => {
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.mensaje || 'Error al abrir caja');
-    toast(data.mensaje || 'Caja abierta');
+    alert(data.mensaje || 'Caja abierta');
     await refreshEstadoYSaldos();
   } catch (e) {
-    toast(e.message);
+    alert(e.message);
   }
 });
 
 btnCerrarCaja.addEventListener('click', () => {
-  // solo abre el modal
   modalCerrar.classList.remove('oculto');
   montoFinalInput.value = '';
   montoFinalInput.focus();
@@ -72,7 +156,7 @@ btnCerrarCaja.addEventListener('click', () => {
 
 confirmarCierreBtn.addEventListener('click', async () => {
   const monto_final = Number(montoFinalInput.value || 0);
-  if (isNaN(monto_final) || monto_final < 0) return toast('Ingrese un monto válido');
+  if (isNaN(monto_final) || monto_final < 0) return alert('Ingrese un monto válido');
 
   try {
     const r = await fetch(`${API}/caja/cerrar`, {
@@ -82,12 +166,11 @@ confirmarCierreBtn.addEventListener('click', async () => {
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.mensaje || 'Error al cerrar caja');
-
     modalCerrar.classList.add('oculto');
-    toast(data.mensaje || 'Caja cerrada');
+    alert(data.mensaje || 'Caja cerrada');
     await refreshEstadoYSaldos();
   } catch (e) {
-    toast(e.message);
+    alert(e.message);
   }
 });
 
@@ -103,10 +186,8 @@ async function refreshEstadoYSaldos() {
 
 async function cargarEstadoCaja() {
   try {
-    // Esta ruta debe existir en tu backend: GET /api/caja/estado
     const r = await fetch(`${API}/caja/estado`, { headers: authHeaders() });
     const data = await r.json();
-
     if (!r.ok) throw new Error(data.mensaje || 'No se pudo obtener estado de caja');
 
     if (data.abierta) {
@@ -128,7 +209,6 @@ async function cargarEstadoCaja() {
 
 async function cargarSaldos() {
   try {
-    // GET /api/finanzas/saldos (tal como ya usan caja/finanzas y funciona)
     const r = await fetch(`${API}/finanzas/saldos`, { headers: authHeaders() });
     const data = await r.json();
     if (!r.ok || data == null) throw new Error(data?.mensaje || 'No se pudo obtener saldos');
@@ -143,3 +223,22 @@ async function cargarSaldos() {
     saldoTotalEl.textContent = '0,00';
   }
 }
+
+// ===== Init =====
+document.addEventListener('DOMContentLoaded', async () => {
+  // Validación de usuario logueado (sin validar rol Dueño)
+  const usuario = await validarSesion();
+  if (!usuario) return; // alert + redirect ya aplicados
+
+  // Completar nombre y rol visibles
+  if (spanUsuario) spanUsuario.textContent = `${usuario.nombre} (${usuario.rol})`;
+
+  // Render de la botonera según rol
+  renderMenu(usuario.rol);
+
+  // Configurar visibilidad de saldos según rol
+  configurarSaldosPorRol(usuario.rol);
+
+  // Cargar info de caja y saldos
+  await refreshEstadoYSaldos();
+});

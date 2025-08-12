@@ -1,27 +1,71 @@
+// js/pedidos.js
 import { obtenerToken } from './utils.js';
 
-const token = obtenerToken();
 const API = 'http://localhost:3000/api';
 
-document.addEventListener('DOMContentLoaded', () => {
-  cargarProveedores();
-  cargarPedidos();
-  document.getElementById('form-pedido').addEventListener('submit', registrarPedido);
-  document.getElementById('form-pago').addEventListener('submit', enviarPagoDetallado);
-  document.getElementById('fuentes_pago').addEventListener('change', actualizarDistribucion);
+// --- Headers con token fresco
+function authHeaders(extra = {}) {
+  const token = obtenerToken();
+  return { Authorization: 'Bearer ' + token, ...extra };
+}
+
+// --- Normalizar rol
+function normalizarRol(rol) {
+  return String(rol || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .trim().toLowerCase();
+}
+const ROLES_PERMITIDOS = new Set(['duenio', 'dueno']); // agregá 'admin' si corresponde
+
+// --- Validar sesión
+async function validarSesion() {
+  const token = obtenerToken();
+  if (!token) {
+    alert('Acceso denegado: iniciá sesión para continuar.');
+    window.location.href = 'login.html';
+    return null;
+  }
+  try {
+    const res = await fetch(`${API}/usuarios/me`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('no-auth');
+    const data = await res.json();
+    return data.usuario;
+  } catch (e) {
+    try { localStorage.removeItem('token'); localStorage.removeItem('usuario'); } catch {}
+    alert('Acceso denegado: tu sesión expiró o es inválida. Volvé a iniciar sesión.');
+    window.location.href = 'login.html';
+    return null;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const usuario = await validarSesion();
+  if (!usuario) return;
+
+  const rolNorm = normalizarRol(usuario.rol);
+  if (!ROLES_PERMITIDOS.has(rolNorm)) {
+    alert('Acceso denegado: esta sección es solo para el Dueño.');
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
+  // Inicializaciones y listeners
+  await cargarProveedores();
+  await cargarPedidos();
+  document.getElementById('form-pedido')?.addEventListener('submit', registrarPedido);
+  document.getElementById('form-pago')?.addEventListener('submit', enviarPagoDetallado);
+  document.getElementById('fuentes_pago')?.addEventListener('change', actualizarDistribucion);
 });
 
 // ---------- CARGAR PROVEEDORES ----------
 async function cargarProveedores() {
   try {
-    const res = await fetch(`${API}/proveedores`, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-
+    const res = await fetch(`${API}/proveedores`, { headers: authHeaders() });
     if (!res.ok) throw new Error('Error al obtener proveedores');
     const data = await res.json();
 
     const select = document.getElementById('proveedor');
+    select.innerHTML = '';
     data.forEach(prov => {
       const option = document.createElement('option');
       option.value = prov.id;
@@ -48,7 +92,7 @@ async function registrarPedido(e) {
   try {
     const res = await fetch(`${API}/pedidos`, {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + token },
+      headers: authHeaders(), // solo Authorization; FormData maneja el boundary del content-type
       body: formData
     });
 
@@ -66,10 +110,7 @@ async function registrarPedido(e) {
 // ---------- CARGAR PEDIDOS ----------
 async function cargarPedidos() {
   try {
-    const res = await fetch(`${API}/pedidos`, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-
+    const res = await fetch(`${API}/pedidos`, { headers: authHeaders() });
     if (!res.ok) throw new Error('Error al obtener pedidos');
     const pedidos = await res.json();
     mostrarPedidos(pedidos);
@@ -123,14 +164,12 @@ function formatearFecha(fechaStr) {
   const f = new Date(fechaStr);
   return f.toLocaleDateString('es-AR');
 }
-
 function sumarDias(fechaStr, dias) {
   const f = new Date(fechaStr);
-  if (isNaN(f)) return new Date(); // fallback
+  if (isNaN(f)) return new Date();
   f.setDate(f.getDate() + dias);
   return f;
 }
-
 function diasRestantes(fecha) {
   const hoy = new Date();
   const diff = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
@@ -145,10 +184,10 @@ window.abrirPago = function (pedido_id, maximo) {
   document.getElementById('distribucion').innerHTML = '';
   document.getElementById('modal-pago').style.display = 'flex';
 };
-
 function cerrarModal() {
   document.getElementById('modal-pago').style.display = 'none';
 }
+window.cerrarModal = cerrarModal;
 
 // ---------- ACTUALIZAR CAMPOS DE DISTRIBUCIÓN ----------
 function actualizarDistribucion() {
@@ -170,6 +209,7 @@ function actualizarDistribucion() {
     contenedor.appendChild(input);
   });
 }
+document.getElementById('fuentes_pago')?.addEventListener('change', actualizarDistribucion);
 
 // ---------- ENVIAR PAGO DETALLADO ----------
 async function enviarPagoDetallado(e) {
@@ -201,10 +241,7 @@ async function enviarPagoDetallado(e) {
   try {
     const res = await fetch(`${API}/pedidos/pago-detallado`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + token
-      },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ pedido_id, monto_total, detalles })
     });
 
@@ -221,10 +258,7 @@ async function enviarPagoDetallado(e) {
 // ---------- VER HISTORIAL DE PAGOS ----------
 window.verHistorial = async function (pedido_id) {
   try {
-    const res = await fetch(`${API}/historial/${pedido_id}`, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-
+    const res = await fetch(`${API}/historial/${pedido_id}`, { headers: authHeaders() });
     if (!res.ok) throw new Error('No se pudo obtener el historial');
 
     const historial = await res.json();
@@ -253,6 +287,4 @@ function cerrarModalHistorial() {
   const modal = document.getElementById('modal-historial');
   modal.style.display = 'none';
 }
-
 window.cerrarModalHistorial = cerrarModalHistorial;
-window.cerrarModal = cerrarModal;
