@@ -41,9 +41,8 @@ body {
   
   .carrito-tabla th {
     background: #66BB6A;
-    color: white;
+    color: rgb(0, 0, 0);
     padding: 12px;
-    text-transform: uppercase;
     letter-spacing: 0.05em;
     font-size: 0.95em;
   }

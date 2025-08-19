@@ -1,29 +1,40 @@
+// controllers/ventaController.js
 const db = require('../models/db');
+
+// ===== Configuración de descuentos/comisiones =====
+const DTO_CASH = 0.10;          // 10% descuento al cliente (efectivo/transferencia) cuando es único método
+const FEE_TARJETA = 0.077;      // 7.7% comisión (débitos/créditos) aplicada al movimiento de caja (neto)
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
 /**
  * Registra un movimiento en movimientos_caja por cada pago recibido.
  * Mapea método → cuenta:
  *  - efectivo  -> caja_fisica
  *  - (transferencia|debito|credito) -> caja_virtual
- *
- * Se ejecuta sobre la misma conexión de la transacción.
+ * CAMBIO: para débito/crédito descuenta comisión del 7.7% en el monto asentado en caja.
+ * CAMBIO: tipo='venta' (ya no 'ingreso').
  */
 async function registrarMovimientosCajaPorPagos(conn, ventaId, pagos, usuarioId) {
   if (!Array.isArray(pagos)) return;
 
   for (const p of pagos) {
     const metodo = String(p.metodo || '').toLowerCase(); // 'efectivo'|'transferencia'|'debito'|'credito'
-    const monto = Number(p.monto || 0);
-    if (!monto || monto <= 0) continue;
+    const montoBruto = Number(p.monto || 0);
+    if (!montoBruto || montoBruto <= 0) continue;
 
     const cuenta = (metodo === 'efectivo') ? 'caja_fisica' : 'caja_virtual';
 
+    // Para tarjetas (débito/crédito) impactamos en caja el neto luego de comisión (7.7%)
+    // Para efectivo/transferencia asentamos lo que venga en pagos (el caller ajusta si corresponde).
+    const aplicarFeeTarjeta = (metodo === 'debito' || metodo === 'credito');
+    const montoNeto = aplicarFeeTarjeta ? round2(montoBruto * (1 - FEE_TARJETA)) : round2(montoBruto);
+
     await conn.query(
       `INSERT INTO movimientos_caja
-        (fecha, usuario_id, cuenta,  tipo,     signo, monto, referencia_tipo, referencia_id, descripcion)
+         (fecha, usuario_id, cuenta,  tipo,   signo, monto,  referencia_tipo, referencia_id, descripcion)
        VALUES
-        (NOW(), ?,        ?,       'ingreso',  +1,    ?,     'venta',         ?,             ?)`,
-      [usuarioId || null, cuenta, monto, ventaId, `Venta ID ${ventaId} (${metodo})`]
+         (NOW(), ?,        ?,       'venta', +1,    ?,      'venta',         ?,             ?)`,
+      [usuarioId || null, cuenta, montoNeto, ventaId, `Venta ID ${ventaId} (${metodo})`]
     );
   }
 }
@@ -95,7 +106,7 @@ exports.confirmarVenta = async (req, res) => {
       return res.status(400).json({ mensaje: 'Carrito vacío' });
     }
 
-    // Calcular total leyendo precio actual
+    // Calcular total (bruto) leyendo precio actual
     let total = 0;
     for (const item of carrito) {
       const [[{ precio }]] = await conn.query(`
@@ -103,10 +114,27 @@ exports.confirmarVenta = async (req, res) => {
         JOIN variantes v ON v.producto_id = p.id
         WHERE v.id = ?
       `, [item.variante_id]);
-      total += precio * item.cantidad;
+      total += Number(precio) * Number(item.cantidad);
+    }
+    total = round2(total);
+
+    // Normalizar pagos (si no mandan, asumo todo efectivo)
+    const pagosNormalizados = (Array.isArray(pagos) && pagos.length)
+      ? pagos.map(x => ({ metodo: String(x.metodo || '').toLowerCase(), monto: Number(x.monto || 0) }))
+      : [{ metodo: 'efectivo', monto: total }];
+
+    // Si es UN SOLO método y es efectivo/transferencia => aplicar 10% de descuento al cliente
+    const unicoMetodo = pagosNormalizados.length === 1;
+    const metodoUnico = unicoMetodo ? pagosNormalizados[0].metodo : null;
+    const esCashOnly = unicoMetodo && (metodoUnico === 'efectivo' || metodoUnico === 'transferencia');
+
+    if (esCashOnly) {
+      const totalConDto = round2(total * (1 - DTO_CASH)); // 10% menos
+      total = totalConDto;
+      pagosNormalizados[0].monto = totalConDto; // el movimiento asentará este bruto; (sin doble descuento aquí)
     }
 
-    // Crear venta
+    // Crear venta (total puede venir con descuento si aplica efectivo/transferencia único)
     const [venta] = await conn.query(
       'INSERT INTO ventas (usuario_id, total, fecha) VALUES (?, ?, NOW())',
       [usuario_id, total]
@@ -122,19 +150,17 @@ exports.confirmarVenta = async (req, res) => {
       `, [item.variante_id]);
 
       await conn.query(
-        `INSERT INTO detalle_venta (venta_id, variante_id, cantidad, precio_unitario)
-         VALUES (?, ?, ?, ?)`,
+        'INSERT INTO detalle_venta (venta_id, variante_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)',
         [venta_id, item.variante_id, item.cantidad, precio]
       );
 
       await conn.query(
-        `UPDATE variantes SET stock = stock - ? WHERE id = ?`,
+        'UPDATE variantes SET stock = stock - ? WHERE id = ?',
         [item.cantidad, item.variante_id]
       );
 
       await conn.query(
-        `INSERT INTO historial_stock (variante_id, tipo_movimiento, cantidad, motivo)
-         VALUES (?, 'Egreso', ?, 'Venta')`,
+        'INSERT INTO historial_stock (variante_id, tipo_movimiento, cantidad, motivo) VALUES (?, "Egreso", ?, "Venta")',
         [item.variante_id, item.cantidad]
       );
     }
@@ -142,18 +168,15 @@ exports.confirmarVenta = async (req, res) => {
     // Vaciar carrito del usuario
     await conn.query('DELETE FROM carrito WHERE usuario_id = ?', [usuario_id]);
 
-    // Finanzas (opcional, si mantenés esta tabla)
+    // Finanzas: ingreso por el total de la venta (ya con descuento si fue cash-only)
     await conn.query(
-      `INSERT INTO finanzas (tipo, descripcion, monto, fecha)
-       VALUES ('Ingreso', ?, ?, NOW())`,
+      'INSERT INTO finanzas (tipo, descripcion, monto, fecha) VALUES ("Ingreso", ?, ?, NOW())',
       [`Venta ID ${venta_id}`, total]
     );
 
-    // Movimientos de caja por pagos (si no mandan, asumo todo efectivo)
-    const pagosNormalizados = Array.isArray(pagos) && pagos.length
-      ? pagos
-      : [{ metodo: 'efectivo', monto: total }];
-
+    // Movimientos de caja:
+    // - Efectivo/Transferencia único: ya mandamos el monto con descuento (no hay doble descuento).
+    // - Débito/Crédito: se aplicará automático el 7.7% de fee al asentar el movimiento (monto neto).
     await registrarMovimientosCajaPorPagos(conn, venta_id, pagosNormalizados, usuario_id);
 
     await conn.commit();
@@ -180,9 +203,28 @@ exports.ventaDesdeCarrito = async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // Total a partir de los items que llegan del front
+    // Total BRUTO a partir de los items que llegan del front
     let total = 0;
-    for (const item of items) total += Number(item.precio) * Number(item.cantidad);
+    for (const item of items) {
+      total += Number(item.precio) * Number(item.cantidad);
+    }
+    total = round2(total);
+
+    // Normalizar pagos del front (pueden venir 1 o más)
+    let pagosNormalizados = Array.isArray(pagos) ? pagos.map(x => ({
+      metodo: String(x.metodo || '').toLowerCase(),
+      monto: Number(x.monto || 0)
+    })) : [];
+
+    // Si es UN SOLO método y es efectivo/transferencia => aplicar 10% de descuento al cliente
+    if (pagosNormalizados.length === 1) {
+      const m = pagosNormalizados[0].metodo;
+      if (m === 'efectivo' || m === 'transferencia') {
+        const totalConDto = round2(total * (1 - DTO_CASH));
+        total = totalConDto;
+        pagosNormalizados[0].monto = totalConDto; // evitamos doble descuento en movimientos
+      }
+    }
 
     // Crear venta
     const [venta] = await conn.query(
@@ -194,32 +236,29 @@ exports.ventaDesdeCarrito = async (req, res) => {
     // Detalle + stock + historial
     for (const item of items) {
       await conn.query(
-        `INSERT INTO detalle_venta (venta_id, variante_id, cantidad, precio_unitario)
-         VALUES (?, ?, ?, ?)`,
+        'INSERT INTO detalle_venta (venta_id, variante_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)',
         [venta_id, item.variante_id, item.cantidad, item.precio]
       );
 
       await conn.query(
-        `UPDATE variantes SET stock = stock - ? WHERE id = ?`,
+        'UPDATE variantes SET stock = stock - ? WHERE id = ?',
         [item.cantidad, item.variante_id]
       );
 
       await conn.query(
-        `INSERT INTO historial_stock (variante_id, tipo_movimiento, cantidad, motivo)
-         VALUES (?, 'Egreso', ?, 'Venta')`,
+        'INSERT INTO historial_stock (variante_id, tipo_movimiento, cantidad, motivo) VALUES (?, "Egreso", ?, "Venta")',
         [item.variante_id, item.cantidad]
       );
     }
 
-    // Finanzas (opcional, si mantenés esta tabla)
+    // Finanzas: ingreso por el total (ya descontado si corresponde cash-only)
     await conn.query(
-      `INSERT INTO finanzas (tipo, descripcion, monto, fecha)
-       VALUES ('Ingreso', ?, ?, NOW())`,
+      'INSERT INTO finanzas (tipo, descripcion, monto, fecha) VALUES ("Ingreso", ?, ?, NOW())',
       [`Venta múltiple ID ${venta_id}`, total]
     );
 
-    // Movimientos de caja por pagos (obligatorio en este flujo)
-    const pagosNormalizados = Array.isArray(pagos) ? pagos : [];
+    // Movimientos de caja:
+    // - Para débito/crédito se aplicará automáticamente 7.7% fee (entra neto a caja_virtual).
     await registrarMovimientosCajaPorPagos(conn, venta_id, pagosNormalizados, usuario_id);
 
     await conn.commit();
@@ -280,5 +319,26 @@ exports.listarVentasDetallado = async (req, res) => {
     res.json(ventas);
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al listar ventas', error });
+  }
+};
+
+/* ===================== UTILIDAD: FIX HISTÓRICO ===================== */
+exports.fixMovimientosVenta = async (_req, res) => {
+  try {
+    const [r] = await db.query(`
+      UPDATE movimientos_caja
+      SET tipo = 'venta'
+      WHERE signo = +1
+        AND tipo = 'ingreso'
+        AND (
+             referencia_tipo = 'venta'
+          OR descripcion LIKE '%Venta ID%'
+          OR referencia_id IN (SELECT id FROM ventas)
+        );
+    `);
+    res.json({ mensaje: 'Movimientos corregidos', afectados: r.affectedRows || 0 });
+  } catch (error) {
+    console.error('fixMovimientosVenta error:', error);
+    res.status(500).json({ mensaje: 'No se pudo corregir movimientos' });
   }
 };

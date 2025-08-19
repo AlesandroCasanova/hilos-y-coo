@@ -1,0 +1,333 @@
+/* =========================================================
+   Hilos y Coo · Tema global (PASTELES)
+   - Diseño moderno, responsive, accesible
+   - 4 paletas pastel seleccionables por clase en <body>
+   - Ej: <body class="theme-pastel-menta">
+   ========================================================= */
+
+:root{
+  /* Base neutra (se sobreescribe por los temas .theme-*) */
+  --bg: #f7f7f8;
+  --bg-alt: #fbfaf9;
+  --surface: #ffffff;
+
+  --text: #1f2937;          /* texto principal (oscuro) */
+  --muted: #667085;         /* texto secundario */
+
+  /* Paleta por defecto (se reemplaza al elegir un tema) */
+  --primary: #8ED1C5;
+  --primary-600: #5FB7A6;
+  --secondary: #F7BFB2;
+  --secondary-600:#EBAA9B;
+  --accent: #FFE29A;
+
+  --border:#e7e7ea;
+  --radius:14px;
+  --shadow:0 10px 25px rgba(0,0,0,.07);
+  --ring:0 0 0 .2rem rgba(0,0,0,.08);
+
+  /* Extras UI */
+  --stitched:#efe7df;       /* borde “costura” */
+  --thead-grad-start:#ffffff;
+  --thead-grad-end:#f5fafb;
+  --thead-text:#2b3342;     /* color reforzado para encabezados */
+
+  --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  --line:1.55;
+  --space: clamp(10px, 1.2vw, 16px);
+}
+
+/* ================= Reset / base ================= */
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+html{ scroll-behavior:smooth; }
+body{
+  margin:0;
+  font-family:var(--font);
+  line-height:var(--line);
+  color:var(--text);
+  background:var(--bg);
+}
+
+h1,h2,h3{ margin:0 0 .6em; line-height:1.25; }
+h1{ font-size: clamp(1.6rem, 2.2vw, 2.2rem); letter-spacing:.2px; }
+h2{ font-size: clamp(1.2rem, 1.8vw, 1.6rem); }
+p{ margin:.4em 0 1em; color:var(--text); }
+small,.muted{ color:var(--muted); }
+
+a{ color:var(--secondary-600); text-decoration:none; }
+a:hover{ text-decoration:underline; }
+
+.container{ width:min(1200px, 92vw); margin-inline:auto; padding: calc(var(--space) * 1.2); }
+
+/* ================= Header ================= */
+header{
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  padding: 14px 18px;
+  background-color: #d3c9fa !important;
+  border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:50;
+  backdrop-filter: blur(6px);
+}
+/* Evita textos blancos heredados de CSS viejos */
+header, header *{ color: var(--text) !important; }
+
+header h1{ letter-spacing:.3px; }
+header button{ margin-left:auto; }
+
+/* ================= Sidebar (si aplica) ================= */
+.sidebar{
+  position:sticky; top:0; min-height:100dvh; width:260px;
+  background: var(--surface);
+  border-right:1px solid var(--border);
+  padding: 24px 18px;
+}
+.sidebar h2{ color:var(--primary-600); margin-bottom:1rem; }
+.sidebar ul{ list-style:none; margin:0; padding:0; }
+.sidebar li{ margin:.35rem 0; }
+.sidebar a{
+  display:block; padding:10px 12px; border-radius:10px;
+  color:var(--text); text-decoration:none;
+}
+.sidebar a.active,
+.sidebar a:hover{
+  background: rgba(0,0,0,.04);
+  color:var(--text);
+}
+
+/* ================= Contenido ================= */
+main.contenido, .contenido{ padding: clamp(16px, 2.2vw, 26px); }
+
+/* ================= Cards ================= */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding: clamp(14px, 2vw, 22px);
+  transition: transform .15s ease, box-shadow .25s ease;
+}
+.card:hover{ transform: translateY(-2px); box-shadow: 0 14px 30px rgba(0,0,0,.09); }
+
+.card-grid{
+  display:grid;
+  gap: clamp(12px, 1.6vw, 18px);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+/* Toque “costura” sutil */
+.stitched{
+  border:2px dashed var(--stitched);
+  background: linear-gradient(180deg, #fff 0%, #e7e1ff 100%);
+}
+
+/* ================= Botones ================= */
+button, .btn{
+  appearance:none; border:none; border-radius: 12px;
+  padding: .7em 1.05em; font-weight:700; cursor:pointer;
+  transition: transform .06s ease, box-shadow .2s ease, background .2s ease;
+  background: var(--primary-600); color:#fff; box-shadow: var(--shadow);
+}
+button:hover, .btn:hover{ transform: translateY(-1px); }
+button:active, .btn:active{ transform: translateY(0); }
+button:focus-visible, .btn:focus-visible{ outline:none; box-shadow: var(--ring); }
+
+.btn-secondary{ background:var(--secondary-600); color:#fff; }
+.btn-accent{ background:var(--accent); color:#2b2b31; }
+.btn-outline{
+  background:transparent; color:var(--primary-600);
+  border:1.5px solid var(--primary-600);
+}
+.btn-danger{ background:#e36868; color:#fff; }
+.boton-volver{ background:#f3f4f6; color:#111827; border:1px solid var(--border); }
+
+/* ================= Formularios ================= */
+label{ display:block; margin-bottom:.35rem; font-weight:600; }
+input[type="text"], input[type="number"], input[type="date"],
+input[type="email"], input[type="password"], select, textarea{
+  width:100%; padding:.65em .75em;
+  border:1px solid var(--border); border-radius:10px; background:#fff;
+  transition:border .15s ease, box-shadow .2s ease;
+}
+input:focus, select:focus, textarea:focus{
+  outline:none; border-color: var(--primary-600); box-shadow: var(--ring);
+}
+.input-row{ display:grid; gap:12px; grid-template-columns: repeat(12, 1fr); }
+.input-row > .col-6{ grid-column: span 6; }
+.input-row > .col-4{ grid-column: span 4; }
+.input-row > .col-12{ grid-column: span 12; }
+input[type="checkbox"], input[type="radio"]{ accent-color: var(--primary-600); }
+
+/* ================= Tablas ================= */
+.tabla-responsive{
+  overflow:auto; border-radius:16px;
+  box-shadow: var(--shadow);
+  background: var(--surface);
+  border:1px solid var(--border);
+}
+table{ width:100%; border-collapse:separate; border-spacing:0; background:transparent; }
+
+thead th{
+  text-align:left; padding:12px 14px;
+  background: linear-gradient(180deg, var(--thead-grad-start), var(--thead-grad-end));
+  color: var(--thead-text, #2b3342); /* CONTRASTE REFORZADO */
+  font-weight:800; border-bottom:1px solid var(--border);
+  letter-spacing:.2px;
+}
+tbody td{ padding:12px 14px; border-bottom:1px solid var(--border); color:#2f3947; }
+tbody tr:hover{ background:#fcfcfd; }
+tbody tr:last-child td{ border-bottom:none; }
+
+.carrito-tabla thead th{
+  background: linear-gradient(180deg, var(--thead-grad-start), var(--thead-grad-end));
+}
+
+/* ================= Badges / Estados ================= */
+.badge{
+  display:inline-block; padding:.22em .55em; border-radius:999px;
+  font-size:.78rem; border:1px solid var(--border); background:#fff;
+}
+.badge.ok{ color:#2e7d32; border-color:rgba(46,125,50,.3); }
+.badge.low{ color:#fff; background:#d14343; border-color:transparent; }
+
+/* Stock bajo */
+.stock-bajo{
+  color:#fff; background:#d14343;
+  padding:.12em .45em; border-radius:8px;
+  animation: pulse 1.3s infinite ease-in-out;
+}
+@keyframes pulse{
+  0%{ box-shadow:0 0 0 0 rgba(209,67,67,.35); }
+  70%{ box-shadow:0 0 0 10px rgba(209,67,67,0); }
+  100%{ box-shadow:0 0 0 0 rgba(209,67,67,0); }
+}
+
+/* ================= Modales ================= */
+.modal{
+  display:none; position:fixed; inset:0;
+  background: rgba(15, 23, 42, .45);
+  justify-content:center; align-items:center; z-index:1000; padding:16px;
+}
+.modal.open{ display:flex; }
+.modal-contenido{
+  width:min(560px, 92vw);
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  animation: modalIn .25s ease;
+}
+.modal-contenido h2{ margin-top:0; margin-bottom:.8em; color:var(--primary-600); }
+.acciones-modal{ margin-top: 1rem; display:flex; gap:10px; justify-content:space-between; }
+.acciones-modal .btn, .acciones-modal button{ min-width:140px; }
+.oculto{ display:none !important; }
+
+@keyframes modalIn{ from{ opacity:0; transform: translateY(-8px); } to{ opacity:1; transform: translateY(0); } }
+
+/* ================= Alertas ================= */
+.alert{ padding:.75em 1em; border-radius:12px; border:1px solid var(--border); background:#fff; }
+.alert.success{ border-color: rgba(46,125,50,.35); color:#2e7d32; }
+.alert.warn{ border-color: rgba(183,121,31,.35); color:#b7791f; }
+.alert.danger{ border-color: rgba(209,67,67,.35); color:#d14343; }
+
+/* ================= Utilidades ================= */
+.flex{ display:flex; } .center{ align-items:center; justify-content:center; }
+.space-between{ justify-content:space-between; }
+.gap-8{ gap:8px; } .gap-12{ gap:12px; } .gap-16{ gap:16px; }
+.mt-8{ margin-top:8px; } .mt-16{ margin-top:16px; }
+.mb-8{ margin-bottom:8px; } .mb-16{ margin-bottom:16px; }
+.text-right{ text-align:right; }
+.hide{ display:none !important; }
+
+/* ================= Responsive ================= */
+@media (max-width: 900px){
+  .sidebar{ position:fixed; left:-260px; top:0; transition:left .25s ease; z-index:60; }
+  .sidebar.open{ left:0; }
+  .contenido{ padding: 16px; }
+}
+@media (max-width: 640px){
+  header{ flex-wrap:wrap; gap:8px; }
+  table{ font-size:.92rem; }
+  thead{ position:sticky; top:0; z-index:1; }
+  .acciones-modal{ flex-direction:column; }
+}
+
+/* =============== TEMAS PASTEL seleccionables ===============
+   Cambiá la clase del <body> para usar una paleta diferente.
+   Por ejemplo: <body class="theme-pastel-menta">
+   ========================================================== */
+
+/* 1) MENTA + MELOCOTÓN (DEFAULT recomendado) */
+.theme-pastel-menta{
+  --bg:#FAFAF9; --bg-alt:#FFFEFD; --surface:#FFFFFF;
+  --text:#1f2937; --muted:#667085; --border:#EAE7E3;
+
+  --primary:#8ED1C5; --primary-600:#5FB7A6;
+  --secondary:#F7BFB2; --secondary-600:#EBAA9B;
+  --accent:#FFE29A;
+
+  --stitched:#F0E6DD;
+  /* Gradiente y texto de encabezados (más nítidos) */
+  --thead-grad-start:#f4faf8;
+  --thead-grad-end:#e6f1ef;
+  --thead-text:#2b3342;
+
+  --ring:0 0 0 .2rem rgba(143,209,197,.25);
+}
+
+/* 2) TERRACOTA + SALVIA (pastel cálido) */
+.theme-pastel-terracota{
+  --bg:#FBF8F6; --bg-alt:#FFFDFC; --surface:#FFFFFF;
+  --text:#1F2A37; --muted:#6B7280; --border:#EADFD8;
+
+  --primary:#D99A8D; --primary-600:#C88779;
+  --secondary:#BFD3C9; --secondary-600:#A9C0B5;
+  --accent:#F1D5A7;
+
+  --stitched:#F0E3DA;
+  --thead-grad-start:#ffffff;
+  --thead-grad-end:#fff7f4;
+  --thead-text:#2b3342;
+
+  --ring:0 0 0 .2rem rgba(217,154,141,.25);
+}
+
+/* 3) LAVANDA + SALMÓN (pastel suave) */
+.theme-pastel-lavanda{
+  --bg:#F8F7FB; --bg-alt:#FFFFFF; --surface:#FFFFFF;
+  --text:#1F2937; --muted:#6B7280; --border:#E7E4F4;
+
+  --primary:#B8A6E4; --primary-600:#A191D8;
+  --secondary:#F4B7A7; --secondary-600:#EAA494;
+  --accent:#F9E79F;
+
+  --stitched:#cbb6ff;
+  --thead-grad-start:#f6f4fd;
+  --thead-grad-end:#d3c9fa;
+  --thead-text:#ffffff;
+
+  --ring:0 0 0 .2rem rgba(184,166,228,.25);
+}
+
+/* 4) AZUL POLVO + MOSTAZA SUAVE (pastel nítido) */
+.theme-pastel-azul{
+  --bg:#F7F9FC; --bg-alt:#FFFFFF; --surface:#FFFFFF;
+  --text:#1F2937; --muted:#667085; --border:#DFE7F1;
+
+  --primary:#9DBAD9; --primary-600:#88A7C8;
+  --secondary:#B8CAD8; --secondary-600:#A4B9CA;
+  --accent:#F4D88E;
+
+  --stitched:#E9EFF7;
+  --thead-grad-start:#ffffff;
+  --thead-grad-end:#f1f6fb;
+  --thead-text:#2b3342;
+
+  --ring:0 0 0 .2rem rgba(157,186,217,.25);
+}
+
+/* Accesibilidad / reducción de movimiento */
+@media (prefers-reduced-motion: reduce){
+  *{ animation: none !important; transition: none !important; }
+}

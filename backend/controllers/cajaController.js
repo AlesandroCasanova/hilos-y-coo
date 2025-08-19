@@ -1,18 +1,33 @@
 const db = require('../models/db');
 
-// GET /api/caja/estado
+/**
+ * GET /api/caja/estado
+ * Respuesta que consume tu front:
+ * {
+ *   abierta: boolean,
+ *   apertura: {...} | null,
+ *   saldo_fisica: number,
+ *   saldo_virtual: number
+ * }
+ */
 exports.estadoCaja = async (req, res) => {
   try {
     const [[abierta]] = await db.query(
       "SELECT * FROM sesiones_caja WHERE estado='abierta' ORDER BY fecha_apertura DESC LIMIT 1"
     );
-    const [[saldos]] = await db.query('SELECT * FROM vista_saldo_cajas');
 
-    res.json({
+    const [mc] = await db.query(`
+      SELECT
+        COALESCE(SUM(CASE WHEN cuenta='caja_fisica'  THEN signo * monto END),0) AS saldo_fisica,
+        COALESCE(SUM(CASE WHEN cuenta='caja_virtual' THEN signo * monto END),0) AS saldo_virtual
+      FROM movimientos_caja
+    `);
+
+    return res.json({
       abierta: !!abierta,
       apertura: abierta || null,
-      saldo_fisica: Number(saldos?.caja_fisica || 0),
-      saldo_virtual: Number(saldos?.caja_virtual || 0)
+      saldo_fisica: Number(mc?.[0]?.saldo_fisica || 0),
+      saldo_virtual: Number(mc?.[0]?.saldo_virtual || 0)
     });
   } catch (err) {
     console.error('estadoCaja error:', err);
@@ -20,7 +35,9 @@ exports.estadoCaja = async (req, res) => {
   }
 };
 
-// GET /api/caja/movimientos?fecha=YYYY-MM-DD&cuenta=(fisica|virtual|todas)
+/**
+ * GET /api/caja/movimientos?fecha=YYYY-MM-DD&cuenta=(fisica|virtual|todas)
+ */
 exports.movimientosDelDia = async (req, res) => {
   try {
     const fecha = req.query.fecha || new Date().toISOString().slice(0,10);
@@ -29,11 +46,8 @@ exports.movimientosDelDia = async (req, res) => {
     let where = 'DATE(fecha) = ?';
     const params = [fecha];
 
-    if (cuenta === 'fisica') {
-      where += " AND cuenta='caja_fisica'";
-    } else if (cuenta === 'virtual') {
-      where += " AND cuenta='caja_virtual'";
-    }
+    if (cuenta === 'fisica')      where += " AND cuenta='caja_fisica'";
+    else if (cuenta === 'virtual') where += " AND cuenta='caja_virtual'";
 
     const [rows] = await db.query(
       `SELECT id, fecha, cuenta, tipo, signo, monto, referencia_tipo, referencia_id, descripcion
@@ -49,7 +63,11 @@ exports.movimientosDelDia = async (req, res) => {
   }
 };
 
-// POST /api/caja/abrir
+/**
+ * POST /api/caja/abrir
+ * - Si ya hay abierta, 400
+ * - Toma último cierre como monto_inicial
+ */
 exports.abrirCaja = async (req, res) => {
   const usuario_id = req.usuario?.id || null;
   try {
@@ -78,7 +96,11 @@ exports.abrirCaja = async (req, res) => {
   }
 };
 
-// POST /api/caja/cerrar  { monto_final }
+/**
+ * POST /api/caja/cerrar  { monto_final }
+ * - Si saldoReal > declarado => reserva automática (registra en movimientos_caja y movimientos_reserva)
+ * - Si saldoReal < declarado => ajuste positivo (ingreso) para cuadrar
+ */
 exports.cerrarCaja = async (req, res) => {
   const usuario_id = req.usuario?.id || null;
   const { monto_final } = req.body;
@@ -98,13 +120,13 @@ exports.cerrarCaja = async (req, res) => {
     const monto_inicial = Number(apertura.monto_inicial || 0);
 
     const [[mov]] = await db.query(
-      `SELECT IFNULL(SUM(signo * monto), 0) AS delta
+      `SELECT COALESCE(SUM(signo * monto),0) AS delta
        FROM movimientos_caja
        WHERE cuenta='caja_fisica' AND fecha >= ?`,
       [apertura.fecha_apertura]
     );
 
-    const delta = Number(mov.delta || 0);
+    const delta     = Number(mov.delta || 0);
     const saldoReal = monto_inicial + delta;
     const declarado = Number(monto_final);
 
@@ -126,7 +148,6 @@ exports.cerrarCaja = async (req, res) => {
         [usuario_id, reservaAuto]
       );
     } else if (saldoReal < declarado) {
-      // Si no querés permitir ajuste positivo, reemplazar por return 400.
       ajuste = declarado - saldoReal;
       await db.query(
         `INSERT INTO movimientos_caja (usuario_id, cuenta, tipo, signo, monto, referencia_tipo, descripcion)
@@ -142,20 +163,16 @@ exports.cerrarCaja = async (req, res) => {
       [usuario_id, declarado, apertura.id]
     );
 
-    res.json({
-      mensaje: 'Caja física cerrada',
-      saldoReal,
-      declarado,
-      reservaAuto,
-      ajuste
-    });
+    res.json({ mensaje: 'Caja física cerrada', saldoReal, declarado, reservaAuto, ajuste });
   } catch (err) {
     console.error('cerrarCaja error:', err);
     res.status(500).json({ mensaje: 'Error al cerrar caja' });
   }
 };
 
-// POST /api/caja/transferir  { desde:'fisica'|'virtual', hacia:'fisica'|'virtual', monto, descripcion }
+/**
+ * POST /api/caja/transferir  { desde:'fisica'|'virtual', hacia:'fisica'|'virtual', monto, descripcion }
+ */
 exports.transferirEntreCajas = async (req, res) => {
   const usuario_id = req.usuario?.id || null;
   const { desde, hacia, monto, descripcion } = req.body;

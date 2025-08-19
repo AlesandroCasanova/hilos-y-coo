@@ -2,19 +2,64 @@
 const db = require('../models/db');
 const bcrypt = require('bcrypt');
 
-// Crear usuario
+const SALT_ROUNDS = 10;
+
+/**
+ * Crear PRIMER usuario como "duenio".
+ * - Sin token.
+ * - Si ya existe algún usuario, bloquea la creación.
+ * - Fuerza rol = 'duenio' (coincide con enum de la BD).
+ */
+exports.registroDuenio = async (req, res) => {
+  try {
+    const { nombre, email, contraseña } = req.body;
+
+    if (!nombre || !email || !contraseña) {
+      return res.status(400).json({ mensaje: 'Todos los campos son obligatorios.' });
+    }
+
+    // ¿Ya existe algún usuario?
+    const [existe] = await db.query('SELECT id FROM usuarios LIMIT 1');
+    if (existe.length > 0) {
+      return res.status(409).json({ mensaje: 'Ya existe un usuario en el sistema.' });
+    }
+
+    // ¿Email duplicado?
+    const [dup] = await db.query('SELECT id FROM usuarios WHERE email = ?', [email]);
+    if (dup.length > 0) {
+      return res.status(400).json({ mensaje: 'El email ya existe.' });
+    }
+
+    const hash = await bcrypt.hash(contraseña, SALT_ROUNDS);
+    await db.query(
+      'INSERT INTO usuarios (nombre, email, contraseña, rol) VALUES (?, ?, ?, ?)',
+      [nombre, email, hash, 'duenio']
+    );
+
+    return res.status(201).json({ mensaje: 'Dueño creado con éxito' });
+  } catch (error) {
+    console.error('Error registroDuenio:', error);
+    return res.status(500).json({ mensaje: 'Error del servidor' });
+  }
+};
+
+// ABM protegido: crear usuario (usa enum 'duenio' | 'empleado')
 exports.crearUsuario = async (req, res) => {
   const { nombre, email, contraseña, rol } = req.body;
   try {
     if (!nombre || !email || !contraseña || !rol) {
       return res.status(400).json({ mensaje: 'Todos los campos son obligatorios.' });
     }
-    // Verificar si el email ya existe
-    const [rows] = await db.query('SELECT * FROM usuarios WHERE email = ?', [email]);
+    if (!['duenio', 'empleado'].includes(rol)) {
+      return res.status(400).json({ mensaje: 'Rol inválido.' });
+    }
+
+    const [rows] = await db.query('SELECT id FROM usuarios WHERE email = ?', [email]);
     if (rows.length > 0) {
       return res.status(400).json({ mensaje: 'El email ya existe.' });
     }
-    const hash = await bcrypt.hash(contraseña, 10);
+
+    const hash = await bcrypt.hash(contraseña, SALT_ROUNDS);
     await db.query(
       'INSERT INTO usuarios (nombre, email, contraseña, rol) VALUES (?, ?, ?, ?)',
       [nombre, email, hash, rol]
@@ -22,7 +67,7 @@ exports.crearUsuario = async (req, res) => {
     res.json({ mensaje: 'Usuario creado' });
   } catch (error) {
     console.error('Error al crear usuario:', error);
-    res.status(500).json({ mensaje: 'Error al crear usuario', error });
+    res.status(500).json({ mensaje: 'Error al crear usuario' });
   }
 };
 
@@ -33,7 +78,7 @@ exports.listarUsuarios = async (req, res) => {
     res.json(usuarios);
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
-    res.status(500).json({ mensaje: 'Error al obtener usuarios', error });
+    res.status(500).json({ mensaje: 'Error al obtener usuarios' });
   }
 };
 
@@ -42,6 +87,9 @@ exports.editarUsuario = async (req, res) => {
   const { id } = req.params;
   const { nombre, email, rol } = req.body;
   try {
+    if (!['duenio', 'empleado'].includes(rol)) {
+      return res.status(400).json({ mensaje: 'Rol inválido.' });
+    }
     await db.query(
       'UPDATE usuarios SET nombre = ?, email = ?, rol = ? WHERE id = ?',
       [nombre, email, rol, id]
@@ -49,7 +97,7 @@ exports.editarUsuario = async (req, res) => {
     res.json({ mensaje: 'Usuario actualizado' });
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
-    res.status(500).json({ mensaje: 'Error al actualizar usuario', error });
+    res.status(500).json({ mensaje: 'Error al actualizar usuario' });
   }
 };
 
@@ -61,14 +109,11 @@ exports.eliminarUsuario = async (req, res) => {
     res.json({ mensaje: 'Usuario eliminado' });
   } catch (error) {
     console.error('Error al eliminar usuario:', error);
-    res.status(500).json({ mensaje: 'Error al eliminar usuario', error });
+    res.status(500).json({ mensaje: 'Error al eliminar usuario' });
   }
 };
 
-/**
- * NUEVO: Obtener el usuario autenticado desde el token
- * GET /api/usuarios/me
- */
+// Usuario actual desde token
 exports.me = async (req, res) => {
   try {
     const id = req.usuario?.id;

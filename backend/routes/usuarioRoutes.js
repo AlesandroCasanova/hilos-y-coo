@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 const {
+  registroDuenio,
   crearUsuario,
   listarUsuarios,
   editarUsuario,
@@ -12,10 +13,17 @@ const {
 
 const verificarToken = require('../middleware/authMiddleware');
 
-// Verificar token y traer usuario logueado
-router.get('/usuarios/me', verificarToken, me);
+/**
+ * RUTA PÚBLICA (sin token)
+ * Crea el primer usuario con rol 'duenio'
+ * Endpoint final: POST /api/usuarios/registro-duenio
+ */
+router.post('/usuarios/registro-duenio', registroDuenio);
 
-// ABM de usuarios (protegido)
+/**
+ * RUTAS PROTEGIDAS (requieren token)
+ */
+router.get('/usuarios/me', verificarToken, me);
 router.post('/usuarios', verificarToken, crearUsuario);
 router.get('/usuarios', verificarToken, listarUsuarios);
 router.put('/usuarios/:id', verificarToken, editarUsuario);

@@ -451,3 +451,5 @@ CREATE TABLE IF NOT EXISTS inventario_movimientos (
 
 ALTER TABLE inventario_movimientos
   ADD COLUMN descripcion VARCHAR(255) NULL AFTER referencia_id;
+
+

@@ -9,7 +9,8 @@ const {
   listarVentas,
   detalleVenta,
   ventaDesdeCarrito,
-  listarVentasDetallado
+  listarVentasDetallado,
+  fixMovimientosVenta
 } = require('../controllers/ventaController');
 const verificarToken = require('../middleware/authMiddleware');
 
@@ -24,10 +25,13 @@ router.post('/ventas', verificarToken, confirmarVenta);
 router.get('/ventas', verificarToken, listarVentas);
 router.get('/venta/:id', verificarToken, detalleVenta);
 
-// --- AGREGADO: venta desde "carrito local" del frontend ---
+// venta desde "carrito local" del frontend
 router.post('/ventas/carrito', verificarToken, ventaDesdeCarrito);
 
-// --- AGREGADO: historial detallado para tabla de ventas por variante ---
+// historial detallado para tabla de ventas por variante
 router.get('/ventas-detallado', verificarToken, listarVentasDetallado);
+
+// utilidad para corregir históricos mal clasificados
+router.post('/ventas/fix-movimientos-venta', verificarToken, fixMovimientosVenta);
 
 module.exports = router;
