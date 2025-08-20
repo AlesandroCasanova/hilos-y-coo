@@ -4,72 +4,85 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestionar Variantes | Hilos y Coo</title>
-  <link rel="stylesheet" href="css/productos.css">
-  <style>
-    .info-producto-variante {
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-      margin-bottom: 20px;
-      padding: 15px 20px;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    .info-producto-variante img {
-      max-width: 80px;
-      max-height: 80px;
-      object-fit: cover;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.09);
-    }
-  </style>
+  <link rel="stylesheet" href="css/variantes.css">
 </head>
 <body>
-  <header>
-    <h1>Gestión de Variantes</h1>
-    <button onclick="cerrarSesion()">Cerrar sesión</button>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="pill">Hilos y Coo</span>
+      <h1>Gestión de Variantes</h1>
+    </div>
+    <div class="controls">
+      <span class="user">Usuario: <b id="usuario-logueado">—</b></span>
+      <a class="btn ghost" href="dashboard.html">← Dashboard</a>
+      <a class="btn ghost" href="productos.html">Productos</a>
+      <button id="btn-salir" class="btn primary">Salir</button>
+    </div>
   </header>
-  <main>
-    <section>
-      <h2>Buscar producto</h2>
-      <form id="buscarProductoForm">
-        <input type="text" id="buscarId" placeholder="ID de producto" style="width:120px;">
-        <input type="text" id="buscarNombre" placeholder="Nombre de producto">
-        <button type="submit">Buscar</button>
+
+  <main class="contenido">
+    <div class="page-head">
+      <h2 class="page-title">Buscar producto</h2>
+      <p class="page-sub">Elegí un producto por <b>ID</b> o por <b>nombre</b> para gestionar sus variantes (talles, colores, stock).</p>
+    </div>
+
+    <!-- Buscador -->
+    <section class="card">
+      <form id="buscarProductoForm" class="card" style="padding:0; border:none; box-shadow:none;">
+        <div style="display:grid; gap:10px; grid-template-columns: 140px 1fr auto; align-items:center;">
+          <input class="input" type="text" id="buscarId" placeholder="ID de producto">
+          <input class="input" type="text" id="buscarNombre" placeholder="Nombre de producto">
+          <button type="submit" class="btn primary">Buscar</button>
+        </div>
       </form>
+
+      <div id="resultados" class="resultados hidden"></div>
     </section>
 
-    <section id="producto-seleccionado" style="display:none;">
+    <!-- Producto seleccionado + variantes -->
+    <section id="producto-seleccionado" class="card" style="display:none;">
       <div id="infoProducto"></div>
-      <button onclick="volverABuscar()">Volver a buscar</button>
-      <div>
-        <h3>Agregar variante</h3>
-        <form id="formVariante">
+
+      <div class="actions" style="margin-bottom:10px;">
+        <button class="btn ghost" onclick="volverABuscar()">Volver a buscar</button>
+        <a class="btn ghost" href="productos.html">Ir a Productos</a>
+      </div>
+
+      <div class="card" style="margin-top:8px;">
+        <h3 style="margin-top:0;">Agregar variante</h3>
+        <form id="formVariante" class="card" style="padding:0; border:none; box-shadow:none;">
           <input type="hidden" id="productoIdVariante">
-          <input type="text" id="talle" placeholder="Talle o medida">
-          <input type="text" id="color" placeholder="Color">
-          <input type="number" id="stock" placeholder="Stock inicial" required>
-          <button type="submit">Agregar variante</button>
+          <div style="display:grid; gap:10px; grid-template-columns: 1fr 1fr 140px auto;">
+            <input class="input" type="text" id="talle" placeholder="Talle o medida">
+            <input class="input" type="text" id="color" placeholder="Color">
+            <input class="input" type="number" id="stock" placeholder="Stock inicial" min="0" required>
+            <button type="submit" class="btn primary">Agregar</button>
+          </div>
         </form>
       </div>
-      <div>
-        <h3>Variantes existentes</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Talle/Medida</th>
-              <th>Color</th>
-              <th>Stock</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-variantes"></tbody>
-        </table>
+
+      <div class="card" style="margin-top:12px; padding:0;">
+        <h3 style="padding:14px; margin:0;">Variantes existentes</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Talle/Medida</th>
+                <th>Color</th>
+                <th>Stock</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-variantes"></tbody>
+          </table>
+        </div>
       </div>
     </section>
   </main>
+
   <script type="module" src="js/variantes.js"></script>
 </body>
 </html>

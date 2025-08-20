@@ -1,136 +1,44 @@
-/* Estilo general */
-body {
-    font-family: 'Segoe UI', sans-serif;
-    margin: 0;
-    background: #f4f6f8;
-    color: #333;
-  }
-  
-  header {
-    background: #4CAF50;
-    color: white;
-    padding: 1em 2em;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-  
-  h1 {
-    margin: 0;
-    font-size: 1.6em;
-  }
-  
-  main {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 2em 1em;
-  }
-  
-  /* Tabla de carrito */
-  .carrito-tabla {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1.5em;
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-    animation: fadeIn 0.5s ease;
-  }
-  
-  .carrito-tabla th {
-    background: #66BB6A;
-    color: rgb(0, 0, 0);
-    padding: 12px;
-    letter-spacing: 0.05em;
-    font-size: 0.95em;
-  }
-  
-  .carrito-tabla td {
-    padding: 14px;
-    border-top: 1px solid #e0e0e0;
-    text-align: center;
-    font-size: 0.95em;
-  }
-  
-  .carrito-tabla input[type="number"] {
-    width: 60px;
-    padding: 6px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
-  /* Totales */
-  .carrito-totales {
-    text-align: right;
-    margin-top: 1.5em;
-    font-size: 1.2em;
-    font-weight: bold;
-  }
-  
-  /* Botones generales */
-  button {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 6px;
-    font-size: 0.95em;
-    cursor: pointer;
-    transition: background 0.3s ease, transform 0.2s ease;
-    margin: 4px;
-  }
-  
-  button:hover {
-    background: #388E3C;
-    transform: scale(1.03);
-  }
-  
-  button:disabled {
-    background: #bdbdbd;
-    cursor: not-allowed;
-  }
-  
-  /* Botón eliminar */
-  .acciones-carrito button {
-    background: #E53935;
-  }
-  
-  .acciones-carrito button:hover {
-    background: #C62828;
-  }
-  
-  /* Botón volver */
-  .boton-volver {
-    background: #9E9E9E;
-  }
-  
-  .boton-volver:hover {
-    background: #757575;
-  }
-  
-  /* Animaciones */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  /* Responsive */
-  @media (max-width: 768px) {
-    main {
-      padding: 1em;
-    }
-  
-    .carrito-tabla th,
-    .carrito-tabla td {
-      font-size: 0.85em;
-      padding: 8px;
-    }
-  
-    button {
-      padding: 8px 12px;
-      font-size: 0.9em;
-    }
-  }
-  
+/* ============================
+   CARRITO — ajustes específicos
+   Usa variables del tema violeta
+   ============================ */
+
+/* Barra de acciones debajo de la tabla */
+.actions-bar {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.actions-right { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Alerta de totales */
+.alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--vio-200);
+  background: var(--vio-50);
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* Input de cantidad ajustado */
+.cantidad-input {
+  width: 86px;
+  text-align: center;
+}
+
+/* Acciones de fila */
+.acciones-carrito .btn { margin: 0; }
+
+/* Modal: checkboxes y inputs en línea prolija */
+.modal-body .check {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 600; color: var(--text);
+}
+#inputs-montos label { display: grid; gap: 6px; }

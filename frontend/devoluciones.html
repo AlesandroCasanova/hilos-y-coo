@@ -2,107 +2,76 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Devoluciones | Hilos y Coo</title>
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <style>
-    /* Extras mínimos para esta vista (apoya a dashboard.css) */
-    .wrap{ max-width:1100px; margin:28px auto; padding:0 16px; }
-    .panel{ background: rgba(17,24,39,.65); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
-    .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .grid{ display:grid; gap:12px; }
-    label.small{ font-size:13px; color:#94a3b8; display:block; margin-bottom:6px; }
-    input[type="number"], input[type="text"], textarea, select{
-      width:100%; padding:10px 12px; background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.12); color:#e5e7eb; border-radius:10px;
-    }
-    .actions{ display:flex; gap:10px; align-items:center; }
-    .btn.sm{ padding:6px 10px; border-radius:8px; font-size:13px; }
-    table{ width:100%; border-collapse: collapse; }
-    th, td{ padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08); font-size:14px; vertical-align:middle; }
-    th{ text-align:left; color:#94a3b8; font-weight:600; }
-    .right{ text-align:right; }
-    .muted{ color:#94a3b8; font-size:13px; }
-    .tag{ display:inline-block; font-size:12px; padding:2px 8px; border:1px solid rgba(255,255,255,.15); border-radius:999px; color:#94a3b8; }
-    .summary{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-    .summary .box{ background:rgba(255,255,255,.04); border:1px dashed rgba(255,255,255,.12); border-radius:12px; padding:12px; }
-    .summary .box h4{ margin:0 0 6px; font-size:13px; color:#94a3b8; font-weight:500; }
-    .summary .box b{ font-size:18px; }
-    .danger{ border-color: rgba(239,68,68,.55)!important; }
-    .primary{ border-color: rgba(99,102,241,.45)!important; }
-    .oculto{ display:none !important; }
-    .pill{ font-size:12px; color:#a3e635; border:1px solid rgba(163,230,53,.4); padding:2px 8px; border-radius:999px; }
 
-    /* Modales */
-    .modal{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; padding:16px; z-index:60; }
-    .modal.abierto{ display:flex; }
-    .modal .box{ width:100%; max-width:960px; background:#111827; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px; }
-    .modal .head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
-    .modal .head h3{ margin:0; font-size:18px; }
-    .modal .foot{ display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
-    .toolbar{ display:flex; gap:8px; align-items:center; margin-bottom:10px; }
-    .toolbar input{ max-width:260px; }
-    .scroll{ max-height: 52vh; overflow:auto; border:1px solid rgba(255,255,255,.06); border-radius:12px; }
-    .clickable:hover{ background: rgba(255,255,255,.06); cursor:pointer; }
-    @media (max-width: 900px){ .grid-2{ grid-template-columns:1fr; } .summary{ grid-template-columns:1fr; } }
-  </style>
+  <!-- Tema violeta unificado -->
+  <link rel="stylesheet" href="css/tema-violeta.css" />
+  <!-- Estilos específicos de la vista -->
+  <link rel="stylesheet" href="css/devoluciones.css?v=1" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
       <div class="logo">🧵</div>
-      <h1>Hilos y Coo</h1>
+      <h1>Devoluciones / Cambios</h1>
     </div>
     <div class="session">
       <span class="user-label">Usuario:</span>
       <span id="usuario-logueado" class="user-value">Cargando…</span>
-      <a href="dashboard.html" class="btn" style="text-decoration:none;">Volver</a>
-      <button id="btn-logout" class="btn-logout">Salir</button>
+      <a href="dashboard.html" class="btn">Volver</a>
+      <button id="btn-logout" class="btn outline">Salir</button>
     </div>
   </header>
 
   <main class="wrap">
     <!-- Buscar venta -->
     <section class="panel">
-      <h2 style="margin:0 0 12px;">Devoluciones / Cambios</h2>
+      <h2 class="panel-title">Devoluciones / Cambios</h2>
+
       <div class="grid-2">
         <div class="grid">
           <div class="actions">
-            <div style="flex:1;">
+            <div class="grow">
               <label class="small" for="venta-id">N° de venta</label>
               <input type="number" id="venta-id" min="1" placeholder="Ej: 123" />
             </div>
             <button id="btn-buscar" class="btn primary sm" title="Buscar por N°">Buscar</button>
             <button id="btn-abrir-modal-ventas" class="btn sm" title="Ver historial">Historial</button>
           </div>
+
           <div class="actions">
             <span class="tag" id="venta-resumen">Sin venta cargada</span>
             <span id="venta-total" class="pill oculto"></span>
           </div>
         </div>
+
         <div class="grid">
           <div>
             <label class="small">Caja a impactar</label>
             <div class="actions">
               <label><input type="radio" name="caja" value="fisica" checked> Física</label>
-              <label style="margin-left:12px;"><input type="radio" name="caja" value="virtual"> Virtual</label>
+              <label class="ml-12"><input type="radio" name="caja" value="virtual"> Virtual</label>
             </div>
           </div>
           <div>
-            <label class="small"><input type="checkbox" id="chk-precio-vigente"> Usar precio vigente en la variante entregada</label>
+            <label class="small">
+              <input type="checkbox" id="chk-precio-vigente"> Usar precio vigente en la variante entregada
+            </label>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Ítems de la venta -->
-    <section id="panel-items" class="panel" style="margin-top:16px;">
+    <section id="panel-items" class="panel mt-16">
       <div class="muted" id="hint-items">Buscá una venta para listar sus ítems…</div>
+
       <div id="tabla-wrap" class="oculto">
-        <table>
+        <table class="tabla">
           <thead>
             <tr>
-              <th>Item</th>
+              <th class="col-id">Item</th>
               <th>Producto / Variante</th>
               <th class="right">Vendida</th>
               <th class="right">Devolver</th>
@@ -114,12 +83,12 @@
           </thead>
           <tbody id="items-body"></tbody>
         </table>
-        <div class="muted" style="margin-top:6px;">* Se usa precio original o vigente (si está activado).</div>
+        <div class="muted mt-6">* Se usa precio original o vigente (si está activado).</div>
       </div>
     </section>
 
     <!-- Resumen y confirmación -->
-    <section class="panel" style="margin-top:16px;">
+    <section class="panel mt-16">
       <div class="summary">
         <div class="box">
           <h4>Total devuelto</h4>
@@ -136,12 +105,12 @@
         </div>
       </div>
 
-      <div class="grid" style="margin-top:12px;">
+      <div class="grid mt-12">
         <div>
           <label class="small" for="motivo">Motivo (opcional)</label>
           <input type="text" id="motivo" placeholder="Ej: color incorrecto"/>
         </div>
-        <div class="actions" style="justify-content:flex-end;">
+        <div class="actions justify-end">
           <button id="btn-confirmar" class="btn primary">Confirmar devolución/cambio</button>
         </div>
       </div>
@@ -155,14 +124,16 @@
         <h3>Seleccionar venta</h3>
         <button id="mven-cerrar" class="btn sm">Cerrar</button>
       </div>
+
       <div class="toolbar">
         <input id="mven-buscar" type="text" placeholder="Buscar por ID, empleado…" />
       </div>
+
       <div class="scroll">
-        <table>
+        <table class="tabla">
           <thead>
             <tr>
-              <th style="width:90px;">ID</th>
+              <th class="col-id">ID</th>
               <th>Fecha</th>
               <th class="right">Total</th>
               <th>Empleado</th>
@@ -171,6 +142,7 @@
           <tbody id="mven-rows"></tbody>
         </table>
       </div>
+
       <div class="foot">
         <small class="muted">Tocá una fila para usar esa venta.</small>
       </div>
@@ -193,9 +165,13 @@
             <button id="mvar-recargar-prod" class="btn sm">Recargar</button>
           </div>
           <div class="scroll">
-            <table>
+            <table class="tabla">
               <thead>
-                <tr><th style="width:90px;">ID</th><th>Producto</th><th class="right">Precio</th></tr>
+                <tr>
+                  <th class="col-id">ID</th>
+                  <th>Producto</th>
+                  <th class="right">Precio</th>
+                </tr>
               </thead>
               <tbody id="mvar-rows-prod"></tbody>
             </table>
@@ -205,9 +181,14 @@
         <div>
           <label class="small">Variantes del producto seleccionado</label>
           <div class="scroll">
-            <table>
+            <table class="tabla">
               <thead>
-                <tr><th style="width:90px;">Var ID</th><th>Talle</th><th>Color</th><th class="right">Stock</th></tr>
+                <tr>
+                  <th class="col-id">Var ID</th>
+                  <th>Talle</th>
+                  <th>Color</th>
+                  <th class="right">Stock</th>
+                </tr>
               </thead>
               <tbody id="mvar-rows-var"></tbody>
             </table>
@@ -218,7 +199,7 @@
         </div>
       </div>
 
-      <div class="foot" style="justify-content:space-between;">
+      <div class="foot justify-between">
         <div class="muted" id="mvar-seleccion">Sin selección</div>
         <button id="mvar-usar" class="btn primary" disabled>Usar esta variante</button>
       </div>

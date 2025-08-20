@@ -1,13 +1,12 @@
 import {
   obtenerToken,
-  fetchConToken,
   mostrarMensaje,
   logout
 } from './utils.js';
 
 const API = 'http://localhost:3000/api';
 
-// ===== Guardia de sesión (solo login, sin roles) =====
+// ===== Guardia de sesión =====
 async function validarSesion() {
   const tk = obtenerToken();
   if (!tk) {
@@ -28,29 +27,65 @@ async function validarSesion() {
     return null;
   }
 }
-// ================================================
 
 const token = obtenerToken();
 let usuario = null;
+let ventasCache = [];
+let empleadosCache = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   const authUser = await validarSesion();
   if (!authUser) return;
-  usuario = authUser; // usamos el usuario validado del backend
+  usuario = authUser;
 
-  cargarCarrito();
-  cargarHistorialVentas();
-  document.getElementById('btnConfirmarVenta').onclick = confirmarVenta;
+  // Header user (opcional)
+  const u = document.getElementById('usuario-logueado');
+  if (u) u.textContent = `${usuario.nombre || 'Usuario'} (${usuario.rol || ''})`;
+
+  // Inicializaciones
+  await cargarEmpleados();
+  await cargarCarrito();
+  await cargarHistorialVentas();
+
+  // Listeners
+  document.getElementById('btnConfirmarVenta')?.addEventListener('click', confirmarVenta);
+  document.getElementById('btn-aplicar-filtros')?.addEventListener('click', aplicarFiltros);
+  document.getElementById('btn-limpiar-filtros')?.addEventListener('click', limpiarFiltros);
+  document.getElementById('btn-salir')?.addEventListener('click', (e)=>{ e.preventDefault(); logout(); });
 });
 
-function cargarCarrito() {
-  fetch(`${API}/carrito/${usuario.id}`, {
-    headers: { Authorization: "Bearer " + token }
-  })
-    .then(res => res.json())
-    .then(carrito => {
-      renderizarCarrito(carrito);
-    });
+/* =========================
+   Empleados para filtro
+   ========================= */
+async function cargarEmpleados(){
+  try {
+    const res = await fetch(`${API}/lista-empleados`, { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new Error('Error empleados');
+    const data = await res.json();
+    empleadosCache = data || [];
+
+    const sel = document.getElementById('filtro-empleado');
+    if (sel) {
+      sel.innerHTML = `<option value="">Todos los empleados</option>`;
+      empleadosCache.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id;
+        opt.textContent = e.nombre;
+        sel.appendChild(opt);
+      });
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+/* =========================
+   Carrito
+   ========================= */
+async function cargarCarrito() {
+  const res = await fetch(`${API}/carrito/${usuario.id}`, { headers: { Authorization: "Bearer " + token } });
+  const carrito = await res.json();
+  renderizarCarrito(carrito || []);
 }
 
 function renderizarCarrito(carrito) {
@@ -76,16 +111,16 @@ function renderizarCarrito(carrito) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${item.producto}</td>
-      <td>${item.talle}</td>
-      <td>${item.color}</td>
+      <td>${item.talle || '-'}</td>
+      <td>${item.color || '-'}</td>
       <td>$${Number(item.precio).toLocaleString('es-AR', {minimumFractionDigits:2})}</td>
       <td>
-        <input type="number" min="1" value="${item.cantidad}" style="width: 60px;"
+        <input class="inline-number" type="number" min="1" value="${item.cantidad}"
           onchange="actualizarCantidad(${item.id}, this.value)">
       </td>
       <td>$${subtotal.toLocaleString('es-AR', {minimumFractionDigits:2})}</td>
       <td>
-        <button onclick="eliminarDelCarrito(${item.id})">Eliminar</button>
+        <button class="btn warn sm" onclick="eliminarDelCarrito(${item.id})">Eliminar</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -131,38 +166,80 @@ function confirmarVenta() {
     .then(res => res.json())
     .then(data => {
       if (data && data.venta_id) {
-        alert("Venta registrada con éxito.");
+        mostrarMensaje?.("Venta registrada con éxito.", "exito");
         cargarCarrito();
         cargarHistorialVentas();
       } else if (data && data.mensaje) {
-        alert(data.mensaje);
+        mostrarMensaje?.(data.mensaje, "info");
       }
-    });
+    })
+    .catch(() => mostrarMensaje?.("No se pudo registrar la venta", "error"));
 }
 
-// Carga historial de ventas
-function cargarHistorialVentas() {
-  fetch(`${API}/ventas`, {
-    headers: { Authorization: "Bearer " + token }
-  })
-    .then(res => res.json())
-    .then(ventas => {
-      const tbody = document.getElementById('tabla-historial-ventas');
-      tbody.innerHTML = '';
-      ventas.forEach(v => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${v.id}</td>
-          <td>${formatearFecha(v.fecha)}</td>
-          <td>$${Number(v.total).toLocaleString('es-AR', {minimumFractionDigits:2})}</td>
-          <td>${v.vendedor}</td>
-          <td>
-            <button onclick="verDetalleVenta(${v.id})">Detalle</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    });
+/* =========================
+   Historial de ventas + filtros
+   ========================= */
+async function cargarHistorialVentas() {
+  const res = await fetch(`${API}/ventas`, { headers: { Authorization: "Bearer " + token } });
+  ventasCache = await res.json();
+  renderHistorial(ventasCache);
+}
+
+function renderHistorial(ventas) {
+  const tbody = document.getElementById('tabla-historial-ventas');
+  tbody.innerHTML = '';
+  (ventas || []).forEach(v => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${v.id}</td>
+      <td>${formatearFecha(v.fecha)}</td>
+      <td>$${Number(v.total).toLocaleString('es-AR', {minimumFractionDigits:2})}</td>
+      <td>${v.vendedor || obtenerNombreEmpleado(v.empleado_id) || '-'}</td>
+      <td>
+        <button class="btn ghost sm" onclick="verDetalleVenta(${v.id})">Detalle</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function obtenerNombreEmpleado(id){
+  if (!id) return null;
+  const e = empleadosCache.find(x => String(x.id) === String(id));
+  return e?.nombre || null;
+}
+
+function aplicarFiltros(){
+  const desdeStr = document.getElementById('filtro-desde').value;
+  const hastaStr = document.getElementById('filtro-hasta').value;
+  const empId = document.getElementById('filtro-empleado').value;
+
+  const desde = desdeStr ? new Date(desdeStr + 'T00:00:00') : null;
+  const hasta = hastaStr ? new Date(hastaStr + 'T23:59:59') : null;
+
+  const filtradas = (ventasCache || []).filter(v => {
+    // Fecha
+    const fv = v.fecha ? new Date(v.fecha) : null;
+    if (desde && fv && fv < desde) return false;
+    if (hasta && fv && fv > hasta) return false;
+
+    // Empleado
+    if (!empId) return true;
+    if (String(v.empleado_id || '') === String(empId)) return true;
+    const empName = obtenerNombreEmpleado(empId);
+    if (empName && String(v.vendedor || '').toLowerCase() === empName.toLowerCase()) return true;
+
+    return false;
+  });
+
+  renderHistorial(filtradas);
+}
+
+function limpiarFiltros(){
+  document.getElementById('filtro-desde').value = '';
+  document.getElementById('filtro-hasta').value = '';
+  document.getElementById('filtro-empleado').value = '';
+  renderHistorial(ventasCache);
 }
 
 // Redirige al detalle de la venta
@@ -173,10 +250,9 @@ window.verDetalleVenta = function(id) {
 function formatearFecha(fecha) {
   if (!fecha) return "-";
   const d = new Date(fecha);
-  return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}, ${d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`;
+  return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}, ${d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`;
 }
 
-function cerrarSesion() {
-  logout();
-}
-window.cerrarSesion = cerrarSesion; // <-- corregido (antes decía "windows")
+/* Header */
+function cerrarSesion() { logout(); }
+window.cerrarSesion = cerrarSesion;

@@ -4,70 +4,74 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Gestión de Empleados - Hilos y Coo</title>
-  <link rel="stylesheet" href="css/empleados.css">
+
+  <!-- Tema global violeta (tokens, topbar, botones) -->
+  <link rel="stylesheet" href="css/tema-violeta.css" />
+
+  <!-- CSS específico de la vista -->
+  <link rel="stylesheet" href="css/empleados.css" />
 </head>
-<body>
+<body class="page-empleados">
+  <!-- Topbar unificada -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🧵</div>
+      <h1>Hilos y Coo</h1>
+    </div>
+    <div class="session">
+      <span class="user-label">Usuario:</span>
+      <span id="usuario-logueado" class="user-value">Cargando…</span>
+      <a href="dashboard.html" class="btn" title="Volver">Volver</a>
+      <button id="btn-logout" class="btn-logout" title="Cerrar sesión">Salir</button>
+    </div>
+  </header>
 
-  <div class="sidebar" id="sidebar">
-    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
-    <h2>Hilos y Coo</h2>
-    <ul>
-      <li><a href="dashboard.html">📊 Dashboard</a></li>
-      <li><a href="productos.html">🧵 Productos</a></li>
-      <li><a href="inventario.html">📦 Inventario</a></li>
-      <li><a href="ventas.html">💸 Ventas</a></li>
-      <li><a href="proveedores.html">🚚 Proveedores</a></li>
-      <li><a href="usuarios.html" class="activo">👥 Empleados</a></li>
-      <li><a href="pagos.html">💰 Pagos</a></li>
-      <li><a href="impuestos.html">🧾 Impuestos</a></li>
-      <li><a href="finanzas.html">📈 Finanzas</a></li>
-      <li><a href="pedidos.html">📥 Pedidos</a></li>
-      <li><a href="index.html" onclick="localStorage.clear()">🚪 Salir</a></li>
-    </ul>
-  </div>
+  <main class="wrap fade-in">
+    <h2 class="page-title">Gestión de Empleados</h2>
 
-  <div class="contenido">
-    <h1>Gestión de Empleados</h1>
-
-    <div class="formulario">
-      <h2>Registrar Empleado</h2>
-      <form id="formEmpleado">
-        <label>Nombre:</label>
-        <input type="text" name="nombre" required />
-
-        <label>Email:</label>
-        <input type="email" name="email" required />
-
-        <label>Contraseña:</label>
-        <input type="password" name="contraseña" required />
-
-        <button type="submit">Registrar</button>
+    <!-- Card: Registrar -->
+    <section class="panel">
+      <h3 class="panel-title">Registrar empleado</h3>
+      <form id="formEmpleado" class="grid">
+        <div>
+          <label class="small">Nombre</label>
+          <input type="text" name="nombre" autocomplete="name" required />
+        </div>
+        <div>
+          <label class="small">Email</label>
+          <input type="email" name="email" autocomplete="email" required />
+        </div>
+        <div>
+          <label class="small">Contraseña</label>
+          <input type="password" name="password" autocomplete="new-password" required />
+        </div>
+        <div class="actions justify-end">
+          <button type="submit" class="btn primary">Registrar</button>
+        </div>
       </form>
-    </div>
+    </section>
 
-    <div class="listado">
-      <h2>Empleados Registrados</h2>
-      <table id="tablaEmpleados">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Rol</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Se cargan dinámicamente con JS -->
-        </tbody>
-      </table>
-    </div>
-  </div>
+    <!-- Card: Listado -->
+    <section class="panel mt-16">
+      <h3 class="panel-title">Empleados registrados</h3>
+      <div class="tabla-wrap">
+        <table id="tablaEmpleados" class="tabla">
+          <thead>
+            <tr>
+              <th class="col-id">ID</th>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Rol</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Se carga por JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
   <script type="module" src="js/empleados.js"></script>
-  <script>
-    function toggleSidebar() {
-      document.getElementById("sidebar").classList.toggle("collapsed");
-    }
-  </script>
 </body>
 </html>

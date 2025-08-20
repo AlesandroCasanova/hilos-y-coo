@@ -7,47 +7,104 @@
   <link rel="stylesheet" href="css/productos.css" />
 </head>
 <body>
-  <header>
-    <h1>Gestión de Productos</h1>
-    <button onclick="abrirModalCategoria()">+ Nueva categoría</button>
-    <button onclick="cerrarSesion()">Cerrar sesión</button>
 
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="pill">Hilos y Coo</span>
+      <h1>Gestión de Productos</h1>
+    </div>
+    <div class="controls">
+      <span class="user">Usuario: <b id="usuario-logueado">—</b></span>
+      <a href="dashboard.html" class="btn ghost">← Dashboard</a>
+      <button class="btn ghost" onclick="abrirModalCategoria()">+ Nueva categoría</button>
+      <button class="btn ghost" onclick="abrirModalProveedor()">+ Nuevo proveedor</button>
+      <button id="btn-nuevo-producto" class="btn primary">+ Nuevo producto</button>
+      <button id="btn-salir" class="btn primary">Salir</button>
+    </div>
   </header>
 
-  <main>
-    <!-- Formulario para agregar producto -->
-    <section id="formulario-producto">
-      <h2>Agregar Producto</h2>
-      <form id="formProducto" enctype="multipart/form-data">
-        <input type="text" id="nombre" placeholder="Nombre" required />
-        <input type="text" id="descripcion" placeholder="Descripción" required />
-        <input type="text" id="codigo" placeholder="Código interno" required />
+  <main class="contenido">
+    <div class="page-head">
+      <h2 class="page-title">Productos</h2>
+      <p class="page-sub">El precio sugerido usa un margen del <b>90%</b> sobre el costo del proveedor.</p>
+    </div>
 
-        <select id="categoria" required>
-          <option value="">Seleccione una categoría</option>
+    <!-- Búsqueda y filtros avanzados -->
+    <section class="card">
+      <h2>Búsqueda y filtros</h2>
+      <div class="filtros-grid">
+        <div class="search">
+          <span>🔎</span>
+          <input id="buscador" type="text" placeholder="Buscar por nombre, código o descripción...">
+        </div>
+
+        <select id="filtro-categoria">
+          <option value="">Todas las categorías</option>
         </select>
 
-        <select id="proveedor" required>
-          <option value="">Seleccione un proveedor</option>
+        <select id="filtro-proveedor">
+          <option value="">Todos los proveedores</option>
         </select>
 
-        <input type="number" id="precio_proveedor" placeholder="Precio del proveedor $" step="0.01" required />
-        <p id="precio_sugerido">Precio sugerido: $0.00</p>
-        <input type="number" id="precio" placeholder="Precio final al público $" step="0.01" required />
+        <input class="input" id="filtro-precio-min" type="number" step="0.01" placeholder="Precio mín.">
+        <input class="input" id="filtro-precio-max" type="number" step="0.01" placeholder="Precio máx.">
 
-        <input type="file" id="imagen" accept="image/*" />
-        <button type="submit">Guardar</button>
-      </form>
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input id="filtro-con-imagen" type="checkbox"> Con imagen
+        </label>
+
+        <select id="ordenar" title="Ordenar">
+          <option value="nombre_asc">Nombre (A→Z)</option>
+          <option value="nombre_desc">Nombre (Z→A)</option>
+          <option value="precio_asc">Precio (menor→mayor)</option>
+          <option value="precio_desc">Precio (mayor→menor)</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+        <button id="btn-aplicar" class="btn ghost">Aplicar</button>
+        <button id="btn-limpiar" class="btn warn">Limpiar</button>
+      </div>
     </section>
 
-    <!-- Formulario para editar producto -->
-    <section id="formulario-edicion" style="display: none;">
+    <!-- Listado de productos -->
+    <section id="lista-productos" class="card">
+      <h2>Productos existentes</h2>
+      <div id="productos"></div>
+    </section>
+
+    <!-- Tabla administrativa -->
+    <section id="tabla-productos" class="card" style="margin-top:14px; padding:0;">
+      <h2 style="padding:14px;">Tabla de productos</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Código</th>
+              <th>Categoría</th>
+              <th>Proveedor</th>
+              <th>Precio</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <!-- filas dinámicas -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Formulario de edición (se mantiene en la página) -->
+    <section id="formulario-edicion" class="card" style="display:none; margin-top:14px;">
       <h2>Editar Producto</h2>
-      <form id="formEditarProducto" enctype="multipart/form-data">
+      <form id="formEditarProducto" enctype="multipart/form-data" class="card" style="padding:0; border:none; box-shadow:none;">
         <input type="hidden" id="edit-id" />
-        <input type="text" id="edit-nombre" placeholder="Nombre" required />
-        <input type="text" id="edit-descripcion" placeholder="Descripción" required />
-        <input type="text" id="edit-codigo" placeholder="Código interno" required />
+        <input class="input" type="text" id="edit-nombre" placeholder="Nombre" required />
+        <input class="input" type="text" id="edit-descripcion" placeholder="Descripción" required />
+        <input class="input" type="text" id="edit-codigo" placeholder="Código interno" required />
 
         <select id="edit-categoria" required>
           <option value="">Seleccione una categoría</option>
@@ -57,69 +114,84 @@
           <option value="">Seleccione un proveedor</option>
         </select>
 
-        <input type="number" id="edit-precio_proveedor" placeholder="Precio del proveedor $" step="0.01" required />
-        <p id="edit-precio_sugerido">Precio sugerido: $0.00</p>
-        <input type="number" id="edit-precio" placeholder="Precio final al público $" step="0.01" required />
+        <input class="input" type="number" id="edit-precio_proveedor" placeholder="Precio del proveedor $" step="0.01" required />
+        <p id="edit-precio_sugerido">Sugerido (90%): $0.00</p>
+        <input class="input" type="number" id="edit-precio" placeholder="Precio final al público $" step="0.01" required />
 
-        <label>Cambiar imagen:</label>
-        <input type="file" id="edit-imagen" accept="image/*" />
-        <button type="submit">Actualizar</button>
-        <button type="button" onclick="cancelarEdicion()">Cancelar</button>
+        <label>Cambiar imagen</label>
+        <div class="file-upload">
+          <input class="sr-only" type="file" id="edit-imagen" accept="image/*" />
+          <label for="edit-imagen" class="btn ghost file-btn">Elegir archivo</label>
+          <span class="file-name" id="edit-imagen-nombre">Ningún archivo seleccionado</span>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+          <button type="button" class="btn ghost" onclick="cancelarEdicion()">Cancelar</button>
+          <button type="submit" class="btn primary">Actualizar</button>
+        </div>
       </form>
     </section>
 
-    <!-- Filtros -->
-    <section id="filtros-productos">
-      <h2>Filtrar productos</h2>
-      <div class="filtros-contenedor">
-        <select id="filtro-categoria">
-          <option value="">Todas las categorías</option>
-        </select>
+    <!-- Modal: Nuevo producto -->
+    <div id="modal-producto" class="modal">
+      <div class="modal-contenido">
+        <button id="close-modal-producto" type="button" class="close-x">✕</button>
+        <h3>Nuevo producto</h3>
+        <form id="formProducto" enctype="multipart/form-data">
+          <input class="input" type="text" id="nombre" placeholder="Nombre" required />
+          <input class="input" type="text" id="descripcion" placeholder="Descripción" required />
+          <input class="input" type="text" id="codigo" placeholder="Código interno" required />
 
-        <select id="filtro-proveedor">
-          <option value="">Todos los proveedores</option>
-        </select>
+          <select id="categoria" required>
+            <option value="">Seleccione una categoría</option>
+          </select>
 
-        <button onclick="aplicarFiltros()">Aplicar</button>
-        <button onclick="limpiarFiltros()">Limpiar</button>
+          <select id="proveedor" required>
+            <option value="">Seleccione un proveedor</option>
+          </select>
+
+          <input class="input" type="number" id="precio_proveedor" placeholder="Precio del proveedor $" step="0.01" required />
+          <p id="precio_sugerido">Sugerido (90%): $0.00</p>
+          <input class="input" type="number" id="precio" placeholder="Precio final al público $" step="0.01" required />
+
+          <label>Imagen</label>
+          <div class="file-upload">
+            <input class="sr-only" type="file" id="imagen" accept="image/*" />
+            <label for="imagen" class="btn ghost file-btn">Elegir archivo</label>
+            <span class="file-name" id="imagen-nombre">Ningún archivo seleccionado</span>
+          </div>
+
+          <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+            <button type="button" class="btn ghost" onclick="document.getElementById('modal-producto').classList.remove('active')">Cancelar</button>
+            <button type="submit" class="btn primary">Guardar</button>
+          </div>
+        </form>
       </div>
-    </section>
+    </div>
 
-    <!-- Listado de productos -->
-    <section id="lista-productos">
-      <h2>Productos existentes</h2>
-      <div id="productos"></div>
-    </section>
-
-    <!-- Tabla administrativa -->
-    <section id="tabla-productos">
-      <h2>Tabla de productos</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Código</th>
-            <th>Categoría</th>
-            <th>Proveedor</th>
-            <th>Precio</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-body">
-          <!-- filas dinámicas -->
-        </tbody>
-      </table>
-    </section>
     <!-- Modal de nueva categoría -->
-<div id="modal-categoria">
-  <form id="formCategoria">
-    <button type="button" onclick="cerrarModalCategoria()">✕</button>
-    <h3>Nueva categoría</h3>
-    <input type="text" id="nombreCategoria" placeholder="Nombre de categoría" required />
-    <button type="submit">Guardar</button>
-  </form>
-</div>
+    <div id="modal-categoria" class="modal">
+      <div class="modal-contenido">
+        <button type="button" class="close-x" onclick="cerrarModalCategoria()">✕</button>
+        <h3>Nueva categoría</h3>
+        <form id="formCategoria">
+          <input class="input" type="text" id="nombreCategoria" placeholder="Nombre de categoría" required />
+          <button type="submit" class="btn primary">Guardar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal de nuevo proveedor -->
+    <div id="modal-proveedor" class="modal">
+      <div class="modal-contenido">
+        <button type="button" class="close-x" onclick="cerrarModalProveedor()">✕</button>
+        <h3>Nuevo proveedor</h3>
+        <form id="formProveedorNuevo">
+          <input class="input" type="text" id="nombreProveedorNuevo" placeholder="Nombre del proveedor" required />
+          <button type="submit" class="btn primary">Guardar</button>
+        </form>
+      </div>
+    </div>
 
   </main>
 

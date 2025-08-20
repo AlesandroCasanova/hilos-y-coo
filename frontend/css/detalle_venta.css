@@ -1,131 +1,89 @@
-body {
-  margin: 0;
-  padding: 0;
-  background: #f6f8fa;
-  font-family: 'Segoe UI', Arial, sans-serif;
+/* =========================================================
+   DETALLE DE VENTA — Violeta unificado + responsive
+   Requiere: tema-violeta.css (tokens y .topbar/.btn base)
+   ========================================================= */
+
+/* Layout base */
+.detalle-venta .container{
+  max-width: 1000px;
+  margin: 24px auto;
+  padding: 0 16px;
 }
 
-header {
-  background: #232e4a;
-  color: #fff;
-  padding: 2rem 2rem 1.5rem 2rem;
-  font-size: 2.4rem;
-  font-weight: bold;
-  letter-spacing: 1px;
-  border-bottom-left-radius: 18px;
-  border-bottom-right-radius: 18px;
+/* Tarjeta factura */
+.invoice-card{
+  border-radius: 18px;
+  background:
+    linear-gradient(#fff,#fff) padding-box,
+    linear-gradient(90deg, var(--vio-200, #e9d5ff), var(--vio-400, #c084fc)) border-box;
+  border: 1px solid transparent;
+  box-shadow: 0 12px 28px rgba(2,6,23,.08);
+  overflow: hidden;
 }
 
-.main-card {
-  max-width: 900px;
-  margin: 4rem auto 2rem auto;
-  padding: 2.8rem 2.8rem 2rem 2.8rem;
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06), 0 2px 12px rgba(35, 46, 74, 0.08);
-  transition: all 0.3s ease;
+/* Cabecera */
+.invoice-head{
+  padding: 16px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  background: var(--vio-50, #f5f3ff);
+}
+.invoice-head .title{
+  font-size: 20px; font-weight: 800; color: var(--vio-900, #4c1d95);
+  margin-bottom: 8px;
+}
+.invoice-head .meta{
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.badge{
+  display:inline-flex; align-items:center; gap:6px;
+  padding: 6px 10px; border-radius: 999px;
+  background: #fff; color: var(--text, #0f172a);
+  border: 1px solid var(--border, #e5e7eb);
+  font-size: 13px;
+}
+.badge b{ font-weight: 700; }
+.badge.total{
+  background: #f0f9ff;
+  border-color: var(--vio-200, #e9d5ff);
+  color: var(--vio-900, #4c1d95);
 }
 
-.volver-wrapper {
-  margin-bottom: 1rem;
+/* Tabla */
+.table-wrap{
+  overflow:auto; /* mobile scroll */
 }
-
-.btn-volver {
-  padding: 0.35em 1.2em;
-  background: #f2f4fc;
-  border: 1.5px solid #2c3e70;
-  border-radius: 8px;
-  font-size: 1.05rem;
-  color: #2c3e70;
-  cursor: pointer;
-  font-weight: 500;
-  box-shadow: 0 2px 6px #0001;
-  transition: background 0.16s, color 0.16s;
-}
-.btn-volver:hover {
-  background: #e6eaf7;
-  color: #1c2a54;
-}
-
-.venta-titulo {
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin-bottom: 0.7rem;
-}
-
-.venta-datos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.1em 2em;
-  margin-bottom: 1.25rem;
-}
-.venta-datos > div {
-  font-size: 1.04rem;
-  padding: 2px 7px;
-  background: #f8fafd;
-  border-radius: 4px;
-  margin-right: 5px;
-  margin-bottom: 5px;
-  border: 1px solid #e1e1e6;
-  display: inline-block;
-}
-.venta-total {
-  color: #145a1d;
-  font-size: 1.13rem;
-  font-weight: bold;
-  border: 1.5px solid #c5e8c5;
-  background: #e9f8ea;
-}
-
-.venta-tabla {
+.venta-tabla{
   width: 100%;
-  margin-top: 1.2rem;
   border-collapse: separate;
   border-spacing: 0;
-  background: #f6f8fc;
-  border-radius: 8px;
-  overflow: hidden;
-  font-size: 1.04rem;
-  box-shadow: 0 2px 12px #232e4a10;
+  font-size: 14px;
 }
-
-.venta-tabla thead tr {
-  background: #e7ecf8;
-}
-
-.venta-tabla th, .venta-tabla td {
-  padding: 0.55em 0.9em;
-  border: 1px solid #bbbbbb55;
-  text-align: left;
-}
-
-.venta-tabla th {
-  font-weight: 600;
-  color: #1e2b4b;
-  background: #e7ecf8;
-}
-
-.venta-tabla td {
+.venta-tabla thead th{
   background: #fff;
+  position: sticky; top: 0; z-index: 1;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  color: var(--text-muted, #64748b);
+  text-align: left; padding: 12px 14px;
+  font-weight: 700; letter-spacing: .2px;
+}
+.venta-tabla tbody td{
+  background: #fff;
+  border-top: 1px solid var(--border, #e5e7eb);
+  padding: 12px 14px; text-align:left;
+}
+.venta-tabla tbody tr:hover td{
+  background: #fafafa;
+}
+.venta-tabla td:last-child{
+  font-weight: 800; color: var(--vio-800, #5b21b6);
+  font-variant: tabular-nums;
 }
 
-.venta-tabla tr:not(:last-child) td {
-  border-bottom: 1.5px solid #e7eaf1;
-}
+/* Utilidades */
+.footer{ text-align:center; color: var(--text-muted,#64748b); padding: 18px 12px; }
 
-.venta-tabla td:last-child {
-  font-weight: 600;
-  color: #18335a;
-}
-
-.venta-tabla td.subtotal {
-  color: #2e7d32;
-  font-weight: bold;
-}
-
-@media (max-width: 800px) {
-  .main-card {
-    max-width: 96vw;
-    padding: 1.5rem 0.7rem;
-  }
+/* Responsive */
+@media (max-width: 640px){
+  .invoice-head .meta{ gap: 6px; }
+  .badge{ font-size: 12px; padding: 6px 8px; }
 }

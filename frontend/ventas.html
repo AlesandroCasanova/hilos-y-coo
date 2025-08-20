@@ -7,52 +7,92 @@
   <link rel="stylesheet" href="css/ventas.css" />
 </head>
 <body>
-  <header>
-    <h1>Gestión de Ventas</h1>
-    <button onclick="cerrarSesion()">Cerrar sesión</button>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="pill">Hilos y Coo</span>
+      <h1>Gestión de Ventas</h1>
+    </div>
+    <div class="controls">
+      <span class="user">Usuario: <b id="usuario-logueado">—</b></span>
+      <a class="btn ghost" href="dashboard.html">← Dashboard</a>
+      <a class="btn ghost" href="productos.html">Productos</a>
+      <a class="btn ghost" href="inventario.html">Inventario</a>
+      <button id="btn-salir" class="btn primary">Salir</button>
+    </div>
   </header>
 
-  <main>
-    <section class="carrito-section">
-      <h2>Carrito actual</h2>
-      <div id="carrito-vacio" style="display: none; color: #666; margin-bottom: 1rem;">El carrito está vacío.</div>
-      <table id="tabla-carrito">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Talle</th>
-            <th>Color</th>
-            <th>Precio unitario</th>
-            <th>Cantidad</th>
-            <th>Subtotal</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="5" style="text-align:right;"><b>Total:</b></td>
-            <td colspan="2" id="totalCarrito"></td>
-          </tr>
-        </tfoot>
-      </table>
-      <button id="btnConfirmarVenta" style="margin-top: 1rem;">Confirmar venta</button>
+  <main class="contenido">
+    <!-- Carrito -->
+    <section class="card carrito-section">
+      <h2 class="page-title" style="margin-bottom:12px;">Carrito actual</h2>
+      <div id="carrito-vacio" style="display: none; margin-bottom: 1rem;">El carrito está vacío.</div>
+      <div class="table-wrap">
+        <table id="tabla-carrito">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Talle</th>
+              <th>Color</th>
+              <th>Precio unitario</th>
+              <th>Cantidad</th>
+              <th>Subtotal</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" style="text-align:right;"><b>Total:</b></td>
+              <td colspan="2" id="totalCarrito"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <button id="btnConfirmarVenta" class="btn primary" style="margin-top: 10px;">Confirmar venta</button>
     </section>
 
-    <section>
-      <h2>Historial de ventas</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Fecha</th>
-            <th>Total</th>
-            <th>Empleado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-historial-ventas"></tbody>
-      </table>
+    <!-- Filtros + Historial -->
+    <section class="card">
+      <h2 class="page-title" style="margin-bottom:12px;">Historial de ventas</h2>
+
+      <!-- Filtros -->
+      <div class="filtros card" style="padding:12px; margin-bottom:12px;">
+        <div>
+          <label for="filtro-desde">Desde</label>
+          <input class="input" type="date" id="filtro-desde">
+        </div>
+        <div>
+          <label for="filtro-hasta">Hasta</label>
+          <input class="input" type="date" id="filtro-hasta">
+        </div>
+        <div>
+          <label for="filtro-empleado">Empleado</label>
+          <select id="filtro-empleado" class="input">
+            <option value="">Todos los empleados</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button id="btn-aplicar-filtros" class="btn ghost">Aplicar</button>
+          <button id="btn-limpiar-filtros" class="btn ghost">Limpiar</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Fecha</th>
+              <th>Total</th>
+              <th>Empleado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-historial-ventas"></tbody>
+        </table>
+      </div>
     </section>
   </main>
 

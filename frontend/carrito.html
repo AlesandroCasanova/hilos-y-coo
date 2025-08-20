@@ -5,66 +5,82 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Carrito de Venta | Hilos y Coo</title>
 
-  <!-- CSS específico (si existe) -->
-  <link rel="stylesheet" href="css/carrito.css" />
-
-  <!-- Tema global pastel -->
-  <link rel="stylesheet" href="css/tema-hilosycoo.css" />
+  <!-- Tema violeta unificado -->
+  <link rel="stylesheet" href="css/tema-violeta.css" />
+  <!-- Estilos específicos de la pantalla -->
+  <link rel="stylesheet" href="css/carrito.css?v=1" />
 </head>
-<!-- Cambiá la clase para alternar paletas pastel -->
-<body class="theme-pastel-lavanda">
-  <header>
-    <h1>Carrito de Venta</h1>
-    <button class="btn btn-outline" onclick="cerrarSesion()">Cerrar sesión</button>
+<body>
+  <!-- TOPBAR unificada -->
+  <header class="topbar">
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo">🛒</div>
+        <h1 style="margin:0;">Carrito de Venta</h1>
+      </div>
+      <div class="right" style="gap:10px;">
+        <a href="dashboard.html" class="btn ghost">← Volver</a>
+        <button class="btn outline" onclick="cerrarSesion()">Cerrar sesión</button>
+      </div>
+    </div>
   </header>
 
-  <main class="contenido">
-    <section class="card stitched">
-      <div class="tabla-responsive">
-        <table class="carrito-tabla">
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>Variante</th>
-              <th>Precio</th>
-              <th>Cantidad</th>
-              <th>Subtotal</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-carrito"></tbody>
-        </table>
-      </div>
+  <main class="container">
+    <section class="card">
+      <div class="content">
+        <div class="table-wrap">
+          <table class="table" id="tabla-carrito-wrap">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Variante</th>
+                <th class="num">Precio</th>
+                <th>Cantidad</th>
+                <th class="num">Subtotal</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-carrito"></tbody>
+          </table>
+        </div>
 
-      <div class="space-between mt-16">
-        <div id="carrito-totales" class="alert"></div>
-        <div class="flex gap-12">
-          <button class="btn" onclick="abrirModalPago()">Confirmar venta</button>
-          <button class="btn boton-volver" onclick="volverCatalogo()">Volver al catálogo</button>
+        <div class="actions-bar">
+          <div id="carrito-totales" class="alert"></div>
+          <div class="actions-right">
+            <button class="btn primary" onclick="abrirModalPago()">Confirmar venta</button>
+            <a class="btn" href="catalogo.html">Volver al catálogo</a>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Modal de métodos de pago -->
-  <div id="modal-pago" class="modal">
-    <div class="modal-contenido">
-      <h2>Seleccionar método de pago</h2>
-      <form id="form-pago">
-        <label><input type="checkbox" name="metodo" value="efectivo"> Efectivo</label>
-        <label><input type="checkbox" name="metodo" value="transferencia"> Transferencia</label>
-        <label><input type="checkbox" name="metodo" value="debito"> Débito</label>
-        <label><input type="checkbox" name="metodo" value="credito"> Crédito</label>
+  <!-- MODAL métodos de pago (usa estilos del tema) -->
+  <div id="modal-pago" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mp-title">
+      <div class="modal-header">
+        <h3 id="mp-title" style="margin:0;">Seleccionar método de pago</h3>
+        <button id="mp-close" class="btn ghost sm" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-pago" class="form-grid form-3" autocomplete="off">
+          <label class="check"><input type="checkbox" name="metodo" value="efectivo"> Efectivo</label>
+          <label class="check"><input type="checkbox" name="metodo" value="transferencia"> Transferencia</label>
+          <label class="check"><input type="checkbox" name="metodo" value="debito"> Débito</label>
+          <label class="check"><input type="checkbox" name="metodo" value="credito"> Crédito</label>
 
-        <div id="inputs-montos" class="oculto"></div>
+          <div id="inputs-montos" class="form-grid form-2 oculto" style="grid-column: 1 / -1;"></div>
 
-        <div class="acciones-modal">
-          <button type="submit" class="btn">Confirmar venta</button>
-          <button type="button" class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
-        </div>
-      </form>
+          <div class="modal-footer" style="grid-column: 1 / -1;">
+            <button type="submit" class="btn primary">Confirmar venta</button>
+            <button type="button" class="btn outline" id="mp-cancel">Cancelar</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
+
+  <footer class="footer">Hilos y Coo — Sistema interno</footer>
 
   <script type="module" src="js/carrito.js"></script>
 </body>

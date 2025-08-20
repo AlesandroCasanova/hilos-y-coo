@@ -150,7 +150,7 @@ function enrichItemRow(r){
 
 // Busca detalle de venta probando endpoints comunes
 async function fetchDetalleVenta(ventaId){
-  // 1) /ventas/:id/detalle -> devuelve array de items
+  // 1) /ventas/:id/detalle
   let r = await fetch(`${API}/ventas/${ventaId}/detalle`, { headers: authHeaders() });
   if (r.ok){
     const items = await r.json();
@@ -173,7 +173,7 @@ async function fetchDetalleVenta(ventaId){
   throw new Error('No existe endpoint de detalle de venta compatible');
 }
 
-// ===== Render de ítems (parcial, por fila) =====
+// ===== Render de ítems =====
 function renderItems(){
   tbody.innerHTML = '';
 
@@ -196,14 +196,15 @@ function renderItems(){
     tr.innerHTML = `
       <td>#${it.venta_item_id}</td>
       <td>
-        <div style="display:flex;flex-direction:column;gap:4px;">
+        <div class="stack">
           <div>${it.producto_nombre}</div>
           <div class="muted">Var ${it.variante_id} • ${it.color || '-'} ${it.talle ? ' / ' + it.talle : ''}</div>
         </div>
       </td>
       <td class="right">${it.cantidad_vendida}</td>
       <td class="right">
-        <input type="number" min="0" max="${it.cantidad_vendida}" step="1" data-idx="${idx}" class="inp-cant" style="width:96px;text-align:right;" value="${it.cantidad_devolver}">
+        <input type="number" min="0" max="${it.cantidad_vendida}" step="1" data-idx="${idx}"
+               class="inp-cant qty-input text-right" value="${it.cantidad_devolver}">
       </td>
       <td>
         <div class="actions">
@@ -310,7 +311,6 @@ async function getPrecioVigenteProducto(producto_id){
 async function confirmar(){
   if (!VENTA || !ITEMS.length) { alert('Buscá primero una venta.'); return; }
 
-  // Payload solo con ítems seleccionados (PARCIAL, no toca toda la venta)
   const caja_tipo = (document.querySelector('input[name="caja"]:checked')?.value) || 'fisica';
   const usarPrecioVigente = !!chkVigente.checked;
   const motivo = String(motivoInput.value || '');
@@ -368,7 +368,6 @@ async function confirmar(){
    =========================== */
 async function openVentasModal(){
   try{
-    // Si ya cacheamos, solo abrir
     if (!HIST_VENTAS.length){
       const r = await fetch(`${API}/ventas`, { headers: authHeaders() });
       if (!r.ok) throw new Error('No se pudo obtener historial de ventas');
@@ -434,9 +433,8 @@ async function openVarModal(itemIdx){
   mvarSeleccion.textContent = 'Sin selección';
 
   try{
-    // Trae productos si cache vacío
     if (!PRODUCTOS.length) await cargarProductosModal();
-    // Preselecciona el producto actual del ítem
+
     const it = ITEMS[itemIdx];
     const prod = PRODUCTOS.find(p => Number(p.id) === Number(it.producto_id));
     if (prod){
@@ -444,7 +442,6 @@ async function openVarModal(itemIdx){
       await cargarVariantesDeProducto(prod.id);
       marcarProductoFila(prod.id);
     } else {
-      // si no se encuentra, limpiar variantes
       mvarRowsVar.innerHTML = `<tr><td colspan="4" class="muted">Seleccioná un producto</td></tr>`;
     }
     modalVar.classList.add('abierto');
@@ -504,9 +501,9 @@ function renderProductosModal(){
 }
 
 function marcarProductoFila(pid){
-  mvarRowsProd.querySelectorAll('tr').forEach(tr => tr.style.background = '');
+  mvarRowsProd.querySelectorAll('tr').forEach(tr => tr.classList.remove('row-selected'));
   const tr = mvarRowsProd.querySelector(`tr[data-pid="${pid}"]`);
-  if (tr) tr.style.background = 'rgba(99,102,241,.12)';
+  if (tr) tr.classList.add('row-selected');
 }
 
 async function cargarVariantesDeProducto(producto_id){
@@ -547,8 +544,8 @@ function renderVariantesModal(){
     `;
     tr.addEventListener('click', () => {
       VARIANTE_SELEC = { id: v.id, talle: v.talle, color: v.color, stock: v.stock };
-      mvarRowsVar.querySelectorAll('tr').forEach(x => x.style.background = '');
-      tr.style.background = 'rgba(34,211,238,.12)';
+      mvarRowsVar.querySelectorAll('tr').forEach(x => x.classList.remove('row-selected'));
+      tr.classList.add('row-selected');
       mvarSeleccion.textContent = `Producto: ${PRODUCTO_SELEC?.nombre || '-'} (#${PRODUCTO_SELEC?.id})  |  Variante: #${v.id} (${v.talle || '-'} ${v.color || '-'})`;
       mvarUsar.disabled = false;
     });
@@ -566,6 +563,3 @@ function usarVarianteSeleccionada(){
   closeVarModal();
   renderItems();   // refresca la fila y recalcula totales
 }
-
-/* Util */
-function stop(e){ e.preventDefault(); e.stopPropagation(); }

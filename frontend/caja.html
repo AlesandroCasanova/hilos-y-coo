@@ -4,52 +4,75 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Caja | Hilos y Coo</title>
-  <!-- CSS específico de la pantalla -->
-  <link rel="stylesheet" href="css/caja.css" />
-  <!-- Tema global pastel (unificado) -->
-  <link rel="stylesheet" href="css/tema-hilosycoo.css?v=1" />
+  <!-- Tema unificado violeta -->
+  <link rel="stylesheet" href="css/tema-violeta.css" />
 </head>
-<!-- Cambiá la clase si querés otro tema: theme-pastel-terracota / theme-pastel-lavanda / theme-pastel-azul -->
-<body class="theme-pastel-menta">
+<body>
+  <!-- TOPBAR -->
   <header class="topbar">
-    <a href="dashboard.html" class="btn">← Volver</a>
-    <h1>Movimientos del día</h1>
-    <div class="right">
-      <span>Física: <b id="saldo-fisica">$0,00</b></span>
-      <span>Virtual: <b id="saldo-virtual">$0,00</b></span>
-      <span>Total: <b id="balance-total">$0,00</b></span>
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo">🧮</div>
+        <h1 style="margin:0;">Movimientos del día</h1>
+      </div>
+      <div class="right" style="gap:12px;">
+        <span>Caja física: <b id="saldo-fisica">$0,00</b></span>
+        <span>Caja virtual: <b id="saldo-virtual">$0,00</b></span>
+        <span>Total: <b id="balance-total">$0,00</b></span>
+        <a href="dashboard.html" class="btn ghost">← Volver</a>
+      </div>
     </div>
   </header>
 
-  <section class="filtros">
-    <label>Fecha
-      <input type="date" id="f-fecha">
-    </label>
-    <label>Cuenta
-      <select id="f-cuenta">
-        <option value="todas">Todas</option>
-        <option value="fisica">Física</option>
-        <option value="virtual">Virtual</option>
-      </select>
-    </label>
-    <button id="btn-buscar" class="btn">Buscar</button>
+  <!-- FILTROS -->
+  <section class="container">
+    <div class="card">
+      <div class="content">
+        <div class="filtros">
+          <label>
+            <span class="label">Fecha</span>
+            <input type="date" id="f-fecha" class="input">
+          </label>
+
+          <label>
+            <span class="label">Cuenta</span>
+            <select id="f-cuenta" class="select">
+              <option value="todas">Todas</option>
+              <option value="fisica">Física</option>
+              <option value="virtual">Virtual</option>
+            </select>
+          </label>
+
+          <div class="filtros-actions">
+            <button id="btn-buscar" class="btn primary">Buscar</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <main>
-    <table>
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Cuenta</th>
-          <th>Tipo</th>
-          <th>Monto</th>
-          <th>Descripción</th>
-          <th>Referencia</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-movs"></tbody>
-    </table>
+  <!-- TABLA -->
+  <main class="container">
+    <div class="table-wrap">
+      <table class="table" id="tabla-caja">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Cuenta</th>
+            <th>Tipo</th>
+            <th class="num">Monto</th>
+            <th>Descripción</th>
+            <th>Referencia</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-movs">
+          <!-- js/caja.js -->
+        </tbody>
+      </table>
+    </div>
   </main>
+
+  <footer class="footer">Hilos y Coo — Sistema interno</footer>
 
   <script type="module" src="js/caja.js"></script>
 </body>

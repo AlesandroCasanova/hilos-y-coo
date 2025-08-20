@@ -1,0 +1,177 @@
+/* =========================================================
+   CATÁLOGO — Violeta unificado + responsive
+   Requiere: tema-violeta.css
+   ========================================================= */
+
+/* Layout base */
+.catalogo .container{
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+/* ----- Filtros ----- */
+.filters{
+  position: sticky;
+  top: 64px; /* debajo de la topbar */
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(2,6,23,.06);
+  margin-bottom: 16px;
+}
+.field{ display:flex; flex-direction:column; gap:6px; min-width: 180px; }
+.field.grow{ min-width: 220px; }
+.field label{ font-size:12px; color: var(--text-muted); letter-spacing:.2px; }
+
+.input-wrap{
+  display:flex; align-items:center; gap:10px;
+  background:#fff; border:1px solid var(--border); border-radius: 12px;
+  padding: 8px 10px;
+}
+.input-wrap .icon{ opacity:.6; }
+.input.search{
+  width:100%; border:none; outline:none; background:transparent; color: var(--text);
+  font-size:14px;
+}
+.input.search::placeholder{ color:#9aa3af; }
+.btn.ghost{
+  border:1px solid var(--border);
+  background: var(--bg-2);
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+/* Select */
+.select{
+  width:100%;
+  padding:10px 12px;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius: 12px;
+  font-size:14px; color: var(--text);
+}
+
+/* ----- Grilla (varios productos) ----- */
+.catalogo-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+/* ----- Vista detalle (un solo producto) ----- */
+.catalogo-grid.single{
+  grid-template-columns: minmax(300px, 860px);
+  justify-content: center;
+}
+.catalogo-grid.single .catalogo-card{
+  display:grid;
+  grid-template-columns: 160px 1fr;
+  column-gap: 16px;
+  row-gap: 0;
+  max-width: 860px;
+}
+.catalogo-grid.single .card-header{
+  display: contents; /* deja a los hijos participar del grid del card */
+}
+.catalogo-grid.single .card-header img{
+  grid-column: 1; grid-row: 1 / span 2;
+  width: 160px; height: 160px; object-fit: cover;
+  border-radius: 14px; background:#f3f4f6; border:1px solid var(--border);
+  margin: 16px 0 0 16px;
+}
+.catalogo-grid.single .card-title{
+  grid-column: 2;
+  padding: 16px 16px 0 0;
+}
+.catalogo-grid.single .card-body{
+  grid-column: 2;
+  padding: 8px 16px 16px 0;
+}
+
+/* Tarjeta de producto */
+.catalogo-card{
+  display:flex; flex-direction:column; gap:10px;
+  border-radius: 16px;
+  background:
+    linear-gradient(#fff,#fff) padding-box,
+    linear-gradient(90deg, var(--vio-200), var(--vio-400)) border-box;
+  border:1px solid transparent;
+  box-shadow: 0 10px 26px rgba(2,6,23,.06);
+  overflow: hidden;
+  transition: transform .14s ease, box-shadow .2s ease;
+}
+.catalogo-card:hover{ transform: translateY(-2px); box-shadow:0 16px 34px rgba(2,6,23,.12); }
+
+.card-header{
+  display:flex; align-items:center; gap:12px;
+  padding: 12px 14px; border-bottom:1px solid var(--border);
+  background: var(--vio-50);
+}
+.card-header img{
+  width:72px; height:72px; object-fit:cover; border-radius: 12px;
+  background:#f3f4f6; border:1px solid var(--border);
+}
+.card-title{ display:flex; flex-direction:column; gap:4px; }
+.card-title b{ font-size:16px; color: var(--vio-900); }
+.meta{ font-size:12px; color: var(--text-muted); display:flex; gap:10px; flex-wrap:wrap; }
+
+.card-body{ padding: 10px 14px 12px; display:flex; flex-direction:column; gap:10px; }
+.desc{ font-size:13px; color: var(--text-muted); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.price{ font-weight:800; color: var(--vio-800); font-variant: tabular-nums; }
+
+/* Variantes */
+.var-title{ font-weight:700; font-size:14px; color: var(--vio-900); }
+.var-list{ display:flex; flex-direction:column; gap:8px; }
+.variante-row{
+  display:grid; grid-template-columns: 1fr 1fr auto auto; gap:10px; align-items:center;
+  padding:8px; border:1px dashed var(--vio-200); border-radius:10px; background:#fff;
+}
+.var-attrs{ font-size:13px; color:#334155; display:flex; gap:8px; flex-wrap:wrap; }
+.var-stock{ font-size:12px; color: var(--text-muted); }
+.cant-input{
+  width:68px; padding:8px; border:1px solid var(--border); border-radius:10px; text-align:center;
+}
+.cant-input::placeholder{ color:#9aa3af; }
+.variante-row .btn{ white-space:nowrap; }
+
+/* Estados */
+.badge-warn{ color:#b45309; background:#fff7ed; border:1px solid #fed7aa; font-size:12px; padding:2px 8px; border-radius:999px; }
+.text-muted{ color: var(--text-muted); }
+.empty-grid{
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  background:#fff; border:1px solid var(--border);
+  border-radius: 14px; padding: 24px; text-align:center;
+}
+
+/* FAB Carrito */
+.fab-cart{
+  position: fixed; right: 20px; bottom: 24px; z-index: 20;
+  width: 56px; height: 56px; border-radius: 999px;
+  display:grid; place-items:center;
+  border: 1px solid var(--vio-300);
+  background: radial-gradient(120% 120% at 30% 30%, var(--vio-400), var(--vio-600));
+  color:#fff; font-size: 24px; box-shadow: 0 10px 24px rgba(109,40,217,.35);
+  cursor:pointer;
+}
+.fab-cart .badge{
+  position:absolute; top:-6px; right:-4px; min-width: 20px; height:20px; padding:0 6px;
+  border-radius:999px; line-height:20px; font-size:12px; text-align:center;
+  background:#111827; color:#fff; border:1px solid var(--vio-200);
+}
+
+/* Responsivo */
+@media (max-width: 880px){
+  .filters{ grid-template-columns: 1fr; top: 56px; }
+}
+@media (max-width: 600px){
+  .variante-row{ grid-template-columns: 1fr 1fr auto; }
+  .variante-row .var-stock{ display:none; }
+  .cant-input{ width:64px; }
+}

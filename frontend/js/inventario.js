@@ -18,17 +18,18 @@ async function validarSesion() {
     const data = await r.json();
     window.__USER__ = data?.usuario || data;
     return window.__USER__;
-  } catch (e) {
+  } catch {
     try { localStorage.removeItem('token'); localStorage.removeItem('usuario'); } catch {}
     alert('Acceso denegado: tu sesión expiró o es inválida. Volvé a iniciar sesión.');
     window.location.href = 'login.html';
     return null;
   }
 }
-// ================================================
 
 // refs
 let grid, buscarInput, soloAlertasChk, badgeGlobal, notice, btnRefrescar, btnSalir;
+let filtroCategoria, filtroProveedor, minStockInput, ordenSelect, resultadosEl, btnLimpiar;
+
 let modal, mImg, mNombre, mId, mCodigo, mCategoria, mProveedor, mPProv, mPVenta, mTbody, btnCerrar, btnHistorial;
 let histWrap, histRows, histVarSel, histTipoSel, histQInput, histLimitSel, histExportBtn;
 
@@ -37,6 +38,7 @@ let VARIANTES = [];     // filas desde /inventario (v.* + p.*)
 let PROV_MAP  = {};     // id -> nombre proveedor
 let GROUPS    = [];     // agrupación por producto
 let CURRENT_GROUP = null;
+let CATEGORIAS = [];
 
 // historial state
 let HIST_DATA = [];
@@ -48,38 +50,23 @@ function norm(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]
 function toast(msg, isErr=false){
   const n = document.createElement('div');
   n.textContent = msg;
-  n.style.position='fixed'; n.style.top='18px'; n.style.right='18px';
-  n.style.background = isErr ? '#7f1d1d' : '#064e3b';
-  n.style.border='1px solid rgba(255,255,255,.15)';
-  n.style.color='#fff'; n.style.padding='10px 14px';
-  n.style.borderRadius='10px'; n.style.zIndex='99';
-  document.body.appendChild(n);
-  setTimeout(()=>n.remove(), 1800);
+  Object.assign(n.style,{position:'fixed',top:'18px',right:'18px',background:isErr?'#7f1d1d':'#4f46e5',color:'#fff',padding:'10px 14px',borderRadius:'10px',zIndex:9999});
+  document.body.appendChild(n); setTimeout(()=>n.remove(),1800);
 }
 function imgURL(nombre){
-  if (!nombre) return 'https://dummyimage.com/300x300/0b1220/ffffff&text=Sin+imagen';
+  if (!nombre) return 'https://dummyimage.com/300x300/ede9fe/6d28d9&text=Sin+imagen';
   if (/^https?:\/\//i.test(nombre)) return nombre;
   return `http://localhost:3000/imagenes_productos/${encodeURIComponent(nombre)}`;
 }
 
-// Inyecta el estilo del badge verde para STOCK ALTO (sin tocar tu CSS global)
+// badge verde “stock alto”
 function ensureBadgeStyles(){
   if (document.getElementById('inv-badge-styles')) return;
   const s = document.createElement('style');
   s.id = 'inv-badge-styles';
   s.textContent = `
-    .cap.ok{
-      background:#065f46 !important;
-      color:#ecfdf5 !important;
-      border:1px solid rgba(255,255,255,.15) !important;
-      padding:2px 8px;
-      border-radius:8px;
-      font-weight:600;
-      font-size:12px;
-      letter-spacing:.3px;
-      display:inline-block;
-      white-space:nowrap;
-    }
+    .cap.ok{ background:#ecfdf5!important; color:#065f46!important; border:1px solid #bbf7d0!important;
+      padding:2px 8px;border-radius:999px;font-weight:600;font-size:12px;white-space:nowrap; }
   `;
   document.head.appendChild(s);
 }
@@ -93,6 +80,14 @@ async function fetchProveedores(){
   const map = {};
   arr.forEach(p => map[p.id] = p.nombre || `#${p.id}`);
   return map;
+}
+async function fetchCategorias(){
+  const tok = obtenerToken();
+  try{
+    const r = await fetch(`${API}/categorias`, { headers:{ Authorization:'Bearer '+tok } });
+    if(!r.ok) return [];
+    return await r.json(); // [{id?, nombre}, ...]
+  }catch{ return []; }
 }
 
 /** Trae inventario con todos los campos de producto */
@@ -124,21 +119,31 @@ async function fetchInventario(){
   }));
 }
 
-function agrupar(variantes, qTxt='', soloAlertas=false){
-  const q = norm(qTxt);
+function agrupar(variantes){
+  const q = norm(buscarInput.value);
+  const soloAlertas = !!soloAlertasChk.checked;
+  const cat = filtroCategoria.value;
+  const prov = filtroProveedor.value;
+  const minStock = Number(minStockInput.value || 0);
+  const orden = ordenSelect.value;
+
   const map = new Map();
-  let alertas = 0;
+  let alertas = 0, totalItems = 0;
 
   variantes.forEach(row => {
-    const match = !q
+    // filtros
+    const matchTxt = !q
       || norm(row.p_nombre).includes(q)
       || norm(row.p_codigo).includes(q)
       || norm(row.color).includes(q)
       || norm(row.talle).includes(q)
       || String(row.variante_id).includes(q);
+    if (!matchTxt) return;
+    if (cat && String(row.p_categoria) !== cat) return;
+    if (prov && String(row.p_proveedor_id||'') !== prov) return;
+    if (minStock && row.stock < minStock) return;
 
     const low = row.stock <= UMBRAL_ALERTA;
-    if (!match) return;
     if (soloAlertas && !low) return;
     if (low) alertas++;
 
@@ -154,35 +159,49 @@ function agrupar(variantes, qTxt='', soloAlertas=false){
         precio_prov: row.p_precio_prov,
         precio: row.p_precio,
         imagen: row.p_imagen,
+        stock_total: 0,
         items: []
       });
     }
-    map.get(key).items.push({
-      id: row.variante_id,
-      talle: row.talle,
-      color: row.color,
-      stock: row.stock
-    });
+    const g = map.get(key);
+    g.items.push({ id: row.variante_id, talle: row.talle, color: row.color, stock: row.stock });
+    g.stock_total += row.stock;
+    totalItems++;
   });
 
-  const list = Array.from(map.values()).map(g => ({
+  let list = Array.from(map.values()).map(g => ({
     ...g,
-    items: g.items.sort((a,b)=> (a.color||'').localeCompare(b.color||'') || (a.talle||'').localeCompare(b.talle||''))}
-  ));
+    items: g.items.sort((a,b)=> (a.color||'').localeCompare(b.color||'') || (a.talle||'').localeCompare(b.talle||''))})
+  );
 
-  return { grupos: list, alertas };
+  // Orden
+  switch(orden){
+    case 'stock-asc':  list.sort((a,b)=> a.stock_total - b.stock_total); break;
+    case 'stock-desc': list.sort((a,b)=> b.stock_total - a.stock_total); break;
+    case 'nombre-asc': list.sort((a,b)=> a.nombre.localeCompare(b.nombre)); break;
+    case 'nombre-desc':list.sort((a,b)=> b.nombre.localeCompare(a.nombre)); break;
+    default: /* relevancia: deja el orden natural de filtrado */ ;
+  }
+
+  return { grupos: list, alertas, totalVar: totalItems };
 }
 
 // ===== render =====
 function render(){
   grid.innerHTML = '';
-  const { grupos, alertas } = agrupar(VARIANTES, buscarInput.value, soloAlertasChk.checked);
+  const { grupos, alertas, totalVar } = agrupar(VARIANTES);
   GROUPS = grupos;
 
+  // cabeceras/avisos
   if (alertas>0){ badgeGlobal.style.display=''; badgeGlobal.textContent=`${alertas} alerta${alertas===1?'':'s'}`; notice.classList.add('show'); }
   else{ badgeGlobal.style.display='none'; notice.classList.remove('show'); }
 
-  if (!grupos.length){ grid.innerHTML = `<div style="opacity:.8;color:#94a3b8">Sin resultados.</div>`; return; }
+  resultadosEl.textContent = `${grupos.length} producto${grupos.length!==1?'s':''} · ${totalVar} variante${totalVar!==1?'s':''}`;
+
+  if (!grupos.length){
+    grid.innerHTML = `<div class="empty muted">Sin resultados.</div>`;
+    return;
+  }
 
   grupos.forEach(g => grid.appendChild(cardProducto(g)));
 }
@@ -190,22 +209,20 @@ function render(){
 function cardProducto(g){
   const provName = PROV_MAP[g.proveedor_id] || (g.proveedor_id ? `#${g.proveedor_id}` : '—');
 
-  const card = document.createElement('div');
+  const card = document.createElement('article');
   card.className = 'card';
 
   const head = document.createElement('div');
   head.className = 'card-head';
   head.innerHTML = `
     <img class="pic" src="${imgURL(g.imagen)}" alt="">
-    <div style="flex:1">
+    <div class="info">
       <h3 class="title">${g.nombre}</h3>
-      <div class="subtitle">ID: ${g.producto_id ?? '—'} · Código: ${g.codigo || '—'}</div>
+      <div class="subtitle">Código <b>${g.codigo || '—'}</b> · Cat. <b>${g.categoria || '—'}</b> · Prov. <b>${provName}</b></div>
       <div class="meta">
-        <div><span class="k">Categoría:</span> ${g.categoria || '—'}</div>
-        <div><span class="k">Proveedor:</span> ${provName}</div>
-        <div><span class="k">Precio prov:</span> $${fmt(g.precio_prov)}</div>
-        <div><span class="k">Precio venta:</span> $${fmt(g.precio)}</div>
-        <div style="grid-column:1/-1;"><span class="k">Descripción:</span> ${g.descripcion || '—'}</div>
+        <span class="tag">Stock total: <b>${g.stock_total}</b></span>
+        <span class="tag">$Prov: <b>${fmt(g.precio_prov)}</b></span>
+        <span class="tag">$Venta: <b>${fmt(g.precio)}</b></span>
       </div>
     </div>
   `;
@@ -215,7 +232,7 @@ function cardProducto(g){
   foot.className = 'card-foot';
   const btnVar = document.createElement('button');
   btnVar.className = 'btn';
-  btnVar.textContent = 'Variantes';
+  btnVar.textContent = 'Ver variantes';
   btnVar.addEventListener('click', () => openModal(g));
   foot.appendChild(btnVar);
   card.appendChild(foot);
@@ -259,7 +276,7 @@ function openModal(grupo){
     btn.addEventListener('click', () => guardarStock(Number(btn.dataset.id), grupo.producto_id));
   });
 
-  // preparar filtros del historial
+  // filtros del historial
   prepararFiltrosHistorial(grupo);
 
   // historial toggle
@@ -277,7 +294,7 @@ function closeModal(){
 }
 
 // ===== acciones variantes =====
-async function guardarStock(varianteId, productoId){
+async function guardarStock(varianteId){
   const input = document.getElementById(`st-${varianteId}`);
   const nuevoStock = Number(input?.value);
   if (isNaN(nuevoStock) || nuevoStock<0) return toast('Stock inválido', true);
@@ -325,7 +342,6 @@ async function guardarStock(varianteId, productoId){
 
 // ===== historial =====
 function prepararFiltrosHistorial(grupo){
-  // llenar selector de variantes
   histVarSel.innerHTML = `<option value="">Todas las variantes</option>`;
   grupo.items.forEach(v => {
     const label = `Var #${v.id} - ${v.color || '-'} / ${v.talle || '-'}`;
@@ -334,11 +350,7 @@ function prepararFiltrosHistorial(grupo){
     op.textContent = label;
     histVarSel.appendChild(op);
   });
-
-  // valores por defecto
-  histTipoSel.value = '';
-  histQInput.value = '';
-  histLimitSel.value = '50';
+  histTipoSel.value = ''; histQInput.value = ''; histLimitSel.value = '50';
 }
 
 async function toggleHistorial(productoId){
@@ -353,7 +365,6 @@ async function toggleHistorial(productoId){
 async function loadHistorial(productoId){
   const limit = Number(histLimitSel.value || '50');
   histRows.innerHTML = `<tr><td colspan="6" class="ref-muted">Cargando...</td></tr>`;
-
   try{
     const tok = obtenerToken();
     const r = await fetch(`${API}/inventario/movimientos?producto_id=${productoId}&limit=${limit}`, {
@@ -361,7 +372,7 @@ async function loadHistorial(productoId){
     });
     const rows = await r.json();
     HIST_DATA = Array.isArray(rows) ? rows : [];
-    renderHistorial(); // con filtros actuales
+    renderHistorial();
   }catch(e){
     console.error(e);
     histRows.innerHTML = `<tr><td colspan="6" class="ref-muted">No se pudo cargar el historial</td></tr>`;
@@ -414,9 +425,7 @@ function formatFechaHora(f){
 }
 
 function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g, s => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
-  }[s]));
+  return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
 }
 
 function exportHistorialCSV(){
@@ -450,43 +459,57 @@ function exportHistorialCSV(){
 // ===== init =====
 async function init(){
   try{
-    PROV_MAP  = await fetchProveedores();
-    VARIANTES = await fetchInventario();
+    PROV_MAP   = await fetchProveedores();
+    CATEGORIAS = await fetchCategorias();
+    VARIANTES  = await fetchInventario();
+
+    // llenar selects
+    if (filtroCategoria){
+      filtroCategoria.innerHTML = `<option value="">Todas</option>`;
+      const cats = [...new Set(CATEGORIAS.map(c=>c.nombre||c))].filter(Boolean).sort();
+      cats.forEach(n => {
+        const op=document.createElement('option'); op.value=n; op.textContent=n; filtroCategoria.appendChild(op);
+      });
+    }
+    if (filtroProveedor){
+      filtroProveedor.innerHTML = `<option value="">Todos</option>`;
+      Object.entries(PROV_MAP)
+        .sort((a,b)=> String(a[1]).localeCompare(String(b[1])))
+        .forEach(([id,nombre])=>{
+          const op=document.createElement('option'); op.value=id; op.textContent=nombre; filtroProveedor.appendChild(op);
+        });
+    }
+
     render();
   }catch(e){
     console.error(e);
-    grid.innerHTML = `<div style="opacity:.8;color:#94a3b8">No se pudo cargar el inventario.</div>`;
+    grid.innerHTML = `<div class="empty muted">No se pudo cargar el inventario.</div>`;
   }
 }
 
 function wire(){
   btnRefrescar.addEventListener('click', init);
   btnSalir.addEventListener('click', logout);
-  buscarInput.addEventListener('input', render);
-  soloAlertasChk.addEventListener('change', render);
+
+  // filtros
+  [buscarInput, soloAlertasChk, filtroCategoria, filtroProveedor, minStockInput, ordenSelect]
+    .forEach(el => el && el.addEventListener(el.tagName==='INPUT' && el.type==='search' ? 'input' : 'change', render));
+  btnLimpiar.addEventListener('click', ()=>{
+    buscarInput.value=''; soloAlertasChk.checked=false; filtroCategoria.value=''; filtroProveedor.value='';
+    minStockInput.value=''; ordenSelect.value='relevancia'; render();
+  });
 
   // filtros historial
   histVarSel.addEventListener('change', renderHistorial);
   histTipoSel.addEventListener('change', renderHistorial);
   histQInput.addEventListener('input', renderHistorial);
-  histLimitSel.addEventListener('change', () => {
-    if (CURRENT_GROUP) loadHistorial(CURRENT_GROUP.producto_id);
-  });
+  histLimitSel.addEventListener('change', () => { if (CURRENT_GROUP) loadHistorial(CURRENT_GROUP.producto_id); });
   histExportBtn.addEventListener('click', exportHistorialCSV);
 
-  // ====== CIERRE DEL MODAL ======
-  // Botón cerrar (evita submit si está dentro de un form)
+  // cerrar modal
   btnCerrar?.addEventListener('click', (e) => { e.preventDefault(); closeModal(); });
-
-  // Click en overlay: cierra si el click no ocurrió dentro del contenido
-  modal?.addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closeModal();
-  });
-
-  // Tecla Escape
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !modal.classList.contains('oculto')) closeModal();
-  });
+  modal?.addEventListener('click', (e) => { if (e.target === e.currentTarget) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.classList.contains('oculto')) closeModal(); });
 }
 
 document.addEventListener('DOMContentLoaded', async ()=>{
@@ -501,6 +524,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   notice = document.getElementById('notice');
   btnRefrescar = document.getElementById('btn-refrescar');
   btnSalir = document.getElementById('btn-salir');
+  filtroCategoria = document.getElementById('filtro-categoria');
+  filtroProveedor = document.getElementById('filtro-proveedor');
+  minStockInput = document.getElementById('min-stock');
+  ordenSelect = document.getElementById('orden');
+  resultadosEl = document.getElementById('resultados');
+  btnLimpiar = document.getElementById('btn-limpiar');
 
   modal = document.getElementById('modal');
   mImg = document.getElementById('m-img');
@@ -523,9 +552,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   histLimitSel = document.getElementById('hist-limit');
   histExportBtn = document.getElementById('hist-export');
 
-  // inyecta estilos del badge verde
   ensureBadgeStyles();
-
   wire();
   init();
 });

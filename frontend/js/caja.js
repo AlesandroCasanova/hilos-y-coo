@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // 3) Mostrar usuario logueado en el header (si existe el span)
+  // 3) Mostrar usuario logueado en el header (si existiera el span)
   const span = document.getElementById('usuario-logueado');
   if (span) span.textContent = `${usuario.nombre} (${usuario.rol})`;
 
@@ -62,7 +62,10 @@ async function validarSesion() {
   } catch (e) {
     console.error('validarSesion:', e);
     // limpiar storage por si quedó algo viejo
-    try { localStorage.removeItem('token'); localStorage.removeItem('usuario'); } catch {}
+    try {
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+    } catch {}
     alert('Acceso denegado: tu sesión expiró o es inválida. Volvé a iniciar sesión.');
     window.location.href = 'login.html';
     return null;
@@ -139,7 +142,7 @@ function renderTabla(rows) {
       <td>${formatFecha(r.fecha)}</td>
       <td>${r.cuenta === 'caja_fisica' ? 'Física' : 'Virtual'}</td>
       <td class="${r.signo > 0 ? 'ingreso' : 'egreso'}">${r.tipo}</td>
-      <td class="${r.signo > 0 ? 'ingreso' : 'egreso'}">$${format(r.monto)}</td>
+      <td class="num ${r.signo > 0 ? 'ingreso' : 'egreso'}">$${format(r.monto)}</td>
       <td>${r.descripcion || ''}</td>
       <td>${r.referencia_tipo || ''} ${r.referencia_id || ''}</td>
     `;

@@ -42,8 +42,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   cargarCategoriasCatalogo();
   cargarCatalogo();
-  document.getElementById('busquedaTexto').addEventListener('input', filtrarCatalogo);
-  document.getElementById('filtroCategoria').addEventListener('change', filtrarCatalogo);
+
+  const inputBusqueda = document.getElementById('busquedaTexto');
+  const selectCategoria = document.getElementById('filtroCategoria');
+  const btnLimpiar = document.getElementById('btn-limpiar');
+
+  inputBusqueda.addEventListener('input', filtrarCatalogo);
+  selectCategoria.addEventListener('change', filtrarCatalogo);
+  btnLimpiar.addEventListener('click', limpiarFiltrosCatalogo);
+
   actualizarCarritoIcono();
 });
 
@@ -59,7 +66,8 @@ function cargarCategoriasCatalogo() {
         option.textContent = cat.nombre;
         select.appendChild(option);
       });
-    });
+    })
+    .catch(() => {});
 }
 
 // Cargar productos (y variantes para stock/talles/colores)
@@ -74,7 +82,8 @@ function cargarCatalogo() {
         inventarioPorProducto[prod.id] = await res.json();
       }));
       renderizarCatalogo(productosCatalogo);
-    });
+    })
+    .catch(() => {});
 }
 
 // Renderizar catálogo
@@ -82,40 +91,82 @@ function renderizarCatalogo(productos) {
   const grid = document.getElementById('gridCatalogo');
   grid.innerHTML = '';
   if (!productos.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;color:#888;padding:2em;">No hay productos que coincidan.</div>';
+    grid.innerHTML = `<div class="empty-grid">No hay productos que coincidan.</div>`;
     return;
   }
+
+  const frag = document.createDocumentFragment();
+
   productos.forEach(prod => {
     const variantes = inventarioPorProducto[prod.id] || [];
+
+    // Header de tarjeta
+    const imgSrc = prod.imagen
+      ? `http://localhost:3000/imagenes_productos/${prod.imagen}`
+      : 'https://via.placeholder.com/120x120?text=Sin+Imagen';
+
+    const header = `
+      <div class="card-header">
+        <img src="${imgSrc}" alt="${escapeHtml(prod.nombre || 'Producto')}" />
+        <div class="card-title">
+          <b>${escapeHtml(prod.nombre)}</b>
+          <div class="meta">
+            <span>Código: <b>${escapeHtml(prod.codigo || '-')}</b></span>
+            <span>Categoría: <b>${escapeHtml(prod.categoria_nombre || prod.categoria || '-')}</b></span>
+            <span>Proveedor: <b>${escapeHtml(prod.proveedor_nombre || String(prod.proveedor_id || '-'))}</b></span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Cuerpo
+    const descripcion = prod.descripcion ? `<div class="desc">${escapeHtml(prod.descripcion)}</div>` : '';
+    const precio = `<div class="price">$${Number(prod.precio).toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>`;
+
+    // Variantes
     let variantesHTML = '';
     variantes.forEach(v => {
       const yaEnCarrito = carrito.find(item => item.variante_id == v.id);
+      const disabled = v.stock == 0 ? 'disabled' : '';
+      const stockHtml = v.stock == 0
+        ? `<span class="badge-warn">Sin stock</span>`
+        : `<span class="var-stock">Stock: ${Number(v.stock)}</span>`;
+
       variantesHTML += `
         <div class="variante-row">
-          <b>Talle:</b> ${v.talle} &nbsp;
-          <b>Color:</b> ${v.color} &nbsp;
-          <b>Stock:</b> ${v.stock} &nbsp;
-          <input type="number" id="cant-${v.id}" min="1" max="${v.stock}" placeholder="Cant." style="width:55px" ${v.stock == 0 ? "disabled" : ""}>
-          <button onclick="agregarAlCarrito(${prod.id}, ${v.id}, '${prod.nombre.replace(/'/g, "\\'")}', '${v.talle}', '${v.color}', ${prod.precio}, ${v.stock})" ${v.stock == 0 ? "disabled" : ""}>
+          <div class="var-attrs">
+            <b>Talle:</b> ${escapeHtml(v.talle || '-')}
+          </div>
+          <div class="var-attrs">
+            <b>Color:</b> ${escapeHtml(v.color || '-')}
+          </div>
+          ${stockHtml}
+          <div class="control">
+            <input class="cant-input" type="number" id="cant-${v.id}" min="1" max="${Number(v.stock)}" placeholder="Cant." ${disabled}>
+          </div>
+          <button class="btn ${v.stock == 0 ? 'outline' : ''}" onclick="agregarAlCarrito(${prod.id}, ${v.id}, '${escapeAttr(prod.nombre)}', '${escapeAttr(v.talle)}', '${escapeAttr(v.color)}', ${Number(prod.precio)}, ${Number(v.stock)})" ${disabled}>
             ${yaEnCarrito ? "Agregado" : "Agregar"}
           </button>
         </div>
       `;
     });
-    grid.innerHTML += `
-      <div class="catalogo-card">
-        <img src="${prod.imagen ? 'http://localhost:3000/imagenes_productos/' + prod.imagen : 'https://via.placeholder.com/120x120?text=Sin+Imagen'}" alt="${prod.nombre}" />
-        <div><b>${prod.nombre}</b></div>
-        <div><small>Código:</small> <b>${prod.codigo}</b></div>
-        <div><small>Categoría:</small> <b>${prod.categoria_nombre || prod.categoria || '-'}</b></div>
-        <div><small>Proveedor:</small> <b>${prod.proveedor_nombre || prod.proveedor_id || '-'}</b></div>
-        <div><small>Precio:</small> <b>$${Number(prod.precio).toLocaleString('es-AR', {minimumFractionDigits: 2})}</b></div>
-        <div><small>Descripción:</small> <span style="color:#333">${prod.descripcion}</span></div>
-        <div><b>Variantes:</b></div>
-        ${variantesHTML || '<span style="color:#a33">Sin variantes cargadas</span>'}
+
+    const variantesBlock = `
+      <div class="var-block">
+        <div class="var-title">Variantes</div>
+        <div class="var-list">
+          ${variantesHTML || `<span class="text-muted">Sin variantes cargadas</span>`}
+        </div>
       </div>
     `;
+
+    const card = document.createElement('article');
+    card.className = 'catalogo-card';
+    card.innerHTML = header + `<div class="card-body">${precio}${descripcion}${variantesBlock}</div>`;
+    frag.appendChild(card);
   });
+
+  grid.appendChild(frag);
 }
 
 // Filtros rápidos
@@ -123,14 +174,16 @@ function filtrarCatalogo() {
   const texto = document.getElementById('busquedaTexto').value.trim().toLowerCase();
   const categoria = document.getElementById('filtroCategoria').value;
   let filtrados = productosCatalogo;
+
   if (texto) {
     filtrados = filtrados.filter(prod =>
       (prod.nombre && prod.nombre.toLowerCase().includes(texto)) ||
       (prod.descripcion && prod.descripcion.toLowerCase().includes(texto)) ||
-      (prod.codigo && prod.codigo.toLowerCase().includes(texto))
+      (prod.codigo && String(prod.codigo).toLowerCase().includes(texto))
     );
   }
-  if (categoria) filtrados = filtrados.filter(prod => prod.categoria === categoria);
+  if (categoria) filtrados = filtrados.filter(prod => (prod.categoria === categoria) || (prod.categoria_nombre === categoria));
+
   renderizarCatalogo(filtrados);
 }
 
@@ -142,8 +195,9 @@ function limpiarFiltrosCatalogo() {
 
 // Agregar al carrito
 window.agregarAlCarrito = function(producto_id, variante_id, nombre, talle, color, precio, stock) {
-  const cantidad = parseInt(document.getElementById('cant-' + variante_id).value);
-  if (!cantidad || cantidad < 1 || cantidad > stock) {
+  const inp = document.getElementById('cant-' + variante_id);
+  const cantidad = parseInt(inp?.value);
+  if (!cantidad || cantidad < 1 || cantidad > Number(stock)) {
     alert("Cantidad inválida");
     return;
   }
@@ -151,22 +205,34 @@ window.agregarAlCarrito = function(producto_id, variante_id, nombre, talle, colo
     alert("Esa variante ya está en el carrito");
     return;
   }
-  carrito.push({
-    producto_id, variante_id, nombre, talle, color, cantidad, precio
-  });
+  carrito.push({ producto_id, variante_id, nombre, talle, color, cantidad, precio });
   localStorage.setItem('carritoVenta', JSON.stringify(carrito));
   actualizarCarritoIcono();
   renderizarCatalogo(productosCatalogo); // Actualiza los botones
-}
+};
 
 function actualizarCarritoIcono() {
-  document.getElementById('carrito-cantidad').textContent = carrito.length;
+  const el = document.getElementById('carrito-cantidad');
+  if (el) el.textContent = carrito.length;
 }
 
 window.irAlCarrito = function() {
   window.location.href = "carrito.html";
-}
+};
 
 function cerrarSesion() {
   logout();
+}
+
+// Utils
+function escapeHtml(str=''){
+  return String(str)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#39;');
+}
+function escapeAttr(str=''){
+  return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

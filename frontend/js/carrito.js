@@ -37,6 +37,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const usuario = await validarSesion();
   if (!usuario) return;
 
+  // Modal listeners
+  const modal = document.getElementById('modal-pago');
+  const closeBtn = document.getElementById('mp-close');
+  const cancelBtn = document.getElementById('mp-cancel');
+  closeBtn?.addEventListener('click', cerrarModal);
+  cancelBtn?.addEventListener('click', cerrarModal);
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) cerrarModal();
+  });
+
   renderizarCarrito();
 
   // Mostrar campos para montos si se eligen más de 1 método
@@ -50,7 +60,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         contenedor.classList.remove('oculto');
         seleccionados.forEach(sel => {
           const label = document.createElement('label');
-          label.innerHTML = `${sel.value}: <input type="number" min="0" step="0.01" name="monto-${sel.value}">`;
+          label.className = 'form-row';
+          label.innerHTML = `
+            <span class="label" style="margin:0">${sel.value}</span>
+            <input class="input" type="number" min="0" step="0.01" name="monto-${sel.value}" placeholder="0,00">
+          `;
           contenedor.appendChild(label);
         });
       } else {
@@ -64,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     e.preventDefault();
 
     const metodos = Array.from(document.querySelectorAll('input[name="metodo"]:checked')).map(input => input.value);
-    const totalVenta = carrito.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+    const totalVenta = carrito.reduce((acc, item) => acc + (Number(item.precio) * Number(item.cantidad)), 0);
 
     if (metodos.length === 0) {
       alert("Seleccioná al menos un método de pago.");
@@ -74,18 +88,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     let pagos = [];
 
     if (metodos.length === 1) {
-      pagos.push({ metodo: metodos[0], monto: totalVenta });
+      pagos.push({ metodo: metodos[0], monto: red2(totalVenta) });
     } else {
       let suma = 0;
       pagos = metodos.map(metodo => {
         const input = document.querySelector(`input[name="monto-${metodo}"]`);
-        const monto = parseFloat(input?.value || 0);
+        const monto = Number(parseFloat(input?.value || 0));
         suma += monto;
-        return { metodo, monto };
+        return { metodo, monto: red2(monto) };
       });
 
-      if (Math.round(suma) !== Math.round(totalVenta)) {
-        alert("La suma de los montos no coincide con el total.");
+      if (Math.abs(red2(suma) - red2(totalVenta)) > 0.01) {
+        alert(`La suma de los montos ($${fmt(suma)}) no coincide con el total ($${fmt(totalVenta)}).`);
         return;
       }
     }
@@ -113,6 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (res.ok) {
       alert("¡Venta registrada!");
       localStorage.removeItem('carritoVenta');
+      cerrarModal();
       window.location.href = "ventas.html";
     } else {
       alert(data.mensaje || "Error al registrar la venta");
@@ -124,25 +139,35 @@ function renderizarCarrito() {
   const tbody = document.getElementById('tabla-carrito');
   tbody.innerHTML = '';
   let total = 0;
+
+  if (!carrito.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#6b7280">El carrito está vacío</td></tr>`;
+  }
+
   carrito.forEach((item, idx) => {
-    const subtotal = item.precio * item.cantidad;
+    const precio = Number(item.precio);
+    const cantidad = Number(item.cantidad);
+    const subtotal = precio * cantidad;
     total += subtotal;
+
     tbody.innerHTML += `
       <tr>
         <td>${item.nombre}</td>
-        <td>Talle: ${item.talle} | Color: ${item.color}</td>
-        <td>$${Number(item.precio).toLocaleString('es-AR', {minimumFractionDigits:2})}</td>
+        <td>Talle: ${item.talle} &nbsp;|&nbsp; Color: ${item.color}</td>
+        <td class="num">$${fmt(precio)}</td>
         <td>
-          <input type="number" min="1" max="999" value="${item.cantidad}" onchange="cambiarCantidad(${idx}, this.value)">
+          <input class="input cantidad-input" type="number" min="1" max="999" value="${cantidad}" onchange="cambiarCantidad(${idx}, this.value)">
         </td>
-        <td>$${Number(subtotal).toLocaleString('es-AR', {minimumFractionDigits:2})}</td>
+        <td class="num">$${fmt(subtotal)}</td>
         <td class="acciones-carrito">
-          <button onclick="eliminarDelCarrito(${idx})">Eliminar</button>
+          <button class="btn danger sm" onclick="eliminarDelCarrito(${idx})">Eliminar</button>
         </td>
       </tr>
     `;
   });
-  document.getElementById('carrito-totales').textContent = `Total: $${Number(total).toLocaleString('es-AR', {minimumFractionDigits:2})}`;
+
+  const totalesEl = document.getElementById('carrito-totales');
+  if (totalesEl) totalesEl.innerHTML = `<b>Total:</b> $ ${fmt(total)}`;
 }
 
 window.cambiarCantidad = function(idx, nuevaCantidad) {
@@ -164,11 +189,13 @@ window.abrirModalPago = function () {
     alert("El carrito está vacío");
     return;
   }
-  document.getElementById('modal-pago').style.display = 'flex';
+  document.getElementById('modal-pago')?.classList.add('show');
+  document.getElementById('modal-pago')?.setAttribute('aria-hidden', 'false');
 };
 
 window.cerrarModal = function () {
-  document.getElementById('modal-pago').style.display = 'none';
+  document.getElementById('modal-pago')?.classList.remove('show');
+  document.getElementById('modal-pago')?.setAttribute('aria-hidden', 'true');
 };
 
 function volverCatalogo() {
@@ -178,3 +205,9 @@ function volverCatalogo() {
 function cerrarSesion() {
   logout();
 }
+
+// ===== Helpers =====
+function fmt(n) {
+  return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function red2(n) { return Math.round(Number(n || 0) * 100) / 100; }

@@ -13,17 +13,18 @@
     <div class="logo">💰</div>
     <h1>Finanzas</h1>
   </div>
-  <div class="right">
-    <span>Usuario: <b id="usuario-logueado">—</b></span>
+  <div class="session">
+    <span class="user-label">Usuario:</span>
+    <span id="usuario-logueado" class="user-chip">—</span>
     <a href="dashboard.html" class="btn ghost">← Volver</a>
     <button id="btn-salir" class="btn danger">Salir</button>
   </div>
 </header>
 
 <main class="container">
-  <!-- Selector de PERÍODO (impacta Resumen + Ganancias) -->
+  <!-- Selector de PERÍODO -->
   <section class="toolbar" id="periodo-bar">
-    <div class="form" style="grid-template-columns: repeat(3, minmax(140px, 1fr)); gap:10px;">
+    <div class="form periodo-grid">
       <div>
         <label for="anio">Año</label>
         <select id="anio"></select>
@@ -32,7 +33,7 @@
         <label for="mes">Mes</label>
         <select id="mes"></select>
       </div>
-      <div style="display:flex;align-items:end;gap:8px;">
+      <div class="periodo-acciones">
         <button id="btn-aplicar" class="btn">Aplicar</button>
         <span id="rango-label" class="muted"></span>
       </div>
@@ -79,14 +80,14 @@
         <div class="hr"></div>
         <div class="kpi">
           <b>Margen bruto</b>
-          <div style="display:flex;gap:8px;align-items:center">
+          <div class="kpi-inline">
             <div id="pl-mb" class="value">$ 0,00</div>
             <span id="pl-mb-pct" class="pill">0%</span>
           </div>
         </div>
         <div class="kpi">
           <b>Ganancia neta</b>
-          <div style="display:flex;gap:8px;align-items:center">
+          <div class="kpi-inline">
             <div id="pl-net" class="value">$ 0,00</div>
             <span id="pl-net-pct" class="pill">0%</span>
           </div>
@@ -108,14 +109,14 @@
         <div class="hr"></div>
         <div class="kpi">
           <b>Margen bruto</b>
-          <div style="display:flex;gap:8px;align-items:center">
+          <div class="kpi-inline">
             <div id="g-mb" class="value">$ 0,00</div>
             <span id="g-mb-pct" class="pill">0%</span>
           </div>
         </div>
         <div class="kpi">
           <b>Ganancia neta</b>
-          <div style="display:flex;gap:8px;align-items:center">
+          <div class="kpi-inline">
             <div id="g-net" class="value">$ 0,00</div>
             <span id="g-net-pct" class="pill">0%</span>
           </div>
@@ -135,9 +136,9 @@
       </article>
     </div>
 
-    <article class="card" style="margin-top:14px">
+    <article class="card mt-16">
       <div class="toolbar">
-        <h3 style="margin:0">Top productos por margen</h3>
+        <h3 class="m-0">Top productos por margen</h3>
         <div class="spacer"></div>
         <label class="muted">Mostrar</label>
         <select id="top-limit">
@@ -145,7 +146,7 @@
         </select>
         <button id="btn-export-top" class="btn ghost btn-sm">Exportar CSV</button>
       </div>
-      <div style="overflow:auto">
+      <div class="tabla-scroll">
         <table class="table-compact">
           <thead>
             <tr>
@@ -169,10 +170,10 @@
 
   <!-- ================= MOVIMIENTOS ================= -->
   <section id="sec-movs" class="tab-panel">
-    <article class="card" style="margin-bottom:12px">
+    <article class="card mb-12">
       <h3>Filtros</h3>
       <div class="toolbar">
-        <div class="form" style="grid-template-columns: repeat(5, minmax(160px, 1fr)); gap:10px; width:100%;">
+        <div class="form filtros-grid">
           <div>
             <label>Desde</label>
             <input type="date" id="m-desde"/>
@@ -200,7 +201,7 @@
               <option value="ajuste">Ajuste</option>
             </select>
           </div>
-          <div style="display:flex;align-items:end">
+          <div class="acciones-end">
             <button id="m-buscar" class="btn">Buscar</button>
           </div>
         </div>
@@ -209,7 +210,7 @@
 
     <article class="card">
       <h3>Movimientos de caja</h3>
-      <div style="overflow:auto">
+      <div class="tabla-scroll">
         <table>
           <thead>
             <tr>
@@ -264,7 +265,7 @@
       <article class="card">
         <h3>Historial de reservas</h3>
         <div class="toolbar">
-          <div class="form" style="grid-template-columns: repeat(5, minmax(160px, 1fr)); gap:10px; width:100%;">
+          <div class="form filtros-grid">
             <div>
               <label>Desde</label>
               <input type="date" id="rh-desde"/>
@@ -289,13 +290,13 @@
                 <option value="liberacion">Liberación</option>
               </select>
             </div>
-            <div style="display:flex;align-items:end">
+            <div class="acciones-end">
               <button id="rh-buscar" class="btn">Buscar</button>
             </div>
           </div>
         </div>
 
-        <div style="overflow:auto">
+        <div class="tabla-scroll">
           <table>
             <thead>
               <tr>

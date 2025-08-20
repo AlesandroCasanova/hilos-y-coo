@@ -3,66 +3,45 @@ const API = 'http://localhost:3000/api';
 const UMBRAL_ALERTA = 2; // Notificar si stock <= 2
 
 // ===== Helpers (sin módulos) =====
-function getToken() {
-  return localStorage.getItem('token') || '';
-}
-function clearSession() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('usuario');
-}
-function authHeaders(extra = {}) {
-  return { Authorization: 'Bearer ' + getToken(), 'Content-Type': 'application/json', ...extra };
-}
-function fmt(n) {
-  return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-function fmtInt(n) {
-  return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
-function normalizarRol(rol) {
-  return String(rol || '')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .trim().toLowerCase(); // "Dueño" -> "dueno"
-}
-function logout() {
-  clearSession();
-  window.location.href = 'login.html';
-}
-function alertAndRedirect(msg, href) {
-  alert(msg);
-  window.location.href = href;
-}
+function getToken() { return localStorage.getItem('token') || ''; }
+function clearSession() { localStorage.removeItem('token'); localStorage.removeItem('usuario'); }
+function authHeaders(extra = {}) { return { Authorization: 'Bearer ' + getToken(), 'Content-Type': 'application/json', ...extra }; }
+function fmt(n) { return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fmtInt(n) { return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+function normalizarRol(rol) { return String(rol || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase(); }
+function logout() { clearSession(); window.location.href = 'login.html'; }
+function alertAndRedirect(msg, href) { alert(msg); window.location.href = href; }
 
 // ===== DOM refs =====
-const estadoTexto = document.getElementById('estado-texto');
-const btnAbrirCaja = document.getElementById('btn-abrir-caja');
-const btnCerrarCaja = document.getElementById('btn-cerrar-caja');
-const saldoFisicaEl = document.getElementById('saldo-fisica');
-const saldoVirtualEl = document.getElementById('saldo-virtual');
-const saldoTotalEl = document.getElementById('saldo-total');
+const estadoTexto       = document.getElementById('estado-texto');
+const btnAbrirCaja      = document.getElementById('btn-abrir-caja');
+const btnCerrarCaja     = document.getElementById('btn-cerrar-caja');
+const saldoFisicaEl     = document.getElementById('saldo-fisica');
+const saldoVirtualEl    = document.getElementById('saldo-virtual');
+const saldoTotalEl      = document.getElementById('saldo-total');
 
-const saldoWrap    = document.getElementById('saldos-wrap');
-const fisicaWrap   = document.getElementById('saldo-fisica-wrap');
-const virtualWrap  = document.getElementById('saldo-virtual-wrap');
-const totalWrap    = document.getElementById('saldo-total-wrap');
-const div1         = document.getElementById('saldo-div-1');
-const div2         = document.getElementById('saldo-div-2');
+const saldoWrap         = document.getElementById('saldos-wrap');
+const fisicaWrap        = document.getElementById('saldo-fisica-wrap');
+const virtualWrap       = document.getElementById('saldo-virtual-wrap');
+const totalWrap         = document.getElementById('saldo-total-wrap');
+const div1              = document.getElementById('saldo-div-1');
+const div2              = document.getElementById('saldo-div-2');
 
-const btnLogout = document.getElementById('btn-logout');
-const modalCerrar = document.getElementById('modal-cerrar');
-const confirmarCierreBtn = document.getElementById('confirmar-cierre');
+const btnLogout         = document.getElementById('btn-logout');
+const modalCerrar       = document.getElementById('modal-cerrar');
+const confirmarCierreBtn= document.getElementById('confirmar-cierre');
 const cancelarCierreBtn = document.getElementById('cancelar-cierre');
-const montoFinalInput = document.getElementById('monto-final');
-const spanUsuario = document.getElementById('usuario-logueado');
-const grid = document.getElementById('menu-grid');
+const montoFinalInput   = document.getElementById('monto-final');
+const spanUsuario       = document.getElementById('usuario-logueado');
+const grid              = document.getElementById('menu-grid');
 
 // Notificaciones
-const notifBell   = document.getElementById('notif-bell');
-const notifPanel  = document.getElementById('notif-panel');
-const notifBadge  = document.getElementById('notif-badge');
-const notifList   = document.getElementById('notif-list');
-const notifEmpty  = document.getElementById('notif-empty');
-const notifRefresh= document.getElementById('notif-refresh');
+const notifBell    = document.getElementById('notif-bell');
+const notifPanel   = document.getElementById('notif-panel');
+const notifBadge   = document.getElementById('notif-badge');
+const notifList    = document.getElementById('notif-list');
+const notifEmpty   = document.getElementById('notif-empty');
+const notifRefresh = document.getElementById('notif-refresh');
 
 // ===== Menú (se filtra por rol) =====
 const MENU = [
@@ -109,13 +88,15 @@ function renderMenu(rol) {
   const items = MENU.filter(it => it.roles.includes(rolNorm));
   const finalItems = items.length ? items : MENU.filter(it => it.roles.includes('empleado'));
 
+  const frag = document.createDocumentFragment();
   finalItems.forEach(({ href, label, icon }) => {
     const a = document.createElement('a');
     a.href = href;
     a.className = 'menu-btn';
     a.innerHTML = `<span class="icon">${icon}</span><span class="text">${label}</span>`;
-    grid.appendChild(a);
+    frag.appendChild(a);
   });
+  grid.appendChild(frag);
 }
 
 // ===== Saldos visibles por rol =====
@@ -132,10 +113,28 @@ function configurarSaldosPorRol(rol) {
   }
 }
 
-// ===== Eventos base =====
-btnLogout.addEventListener('click', logout);
+/* ===== Modal helpers (FIX principal: usar .show) ===== */
+function abrirModalCerrarCaja() {
+  if (!modalCerrar) return;
+  modalCerrar.classList.remove('oculto'); // por si estaba oculto
+  modalCerrar.classList.add('show');      // clave para que se muestre
+  modalCerrar.setAttribute('aria-hidden', 'false');
+  if (montoFinalInput) {
+    montoFinalInput.value = '';
+    setTimeout(() => montoFinalInput.focus(), 0);
+  }
+}
+function cerrarModalCerrarCaja() {
+  if (!modalCerrar) return;
+  modalCerrar.classList.remove('show');
+  modalCerrar.classList.add('oculto');
+  modalCerrar.setAttribute('aria-hidden', 'true');
+}
 
-btnAbrirCaja.addEventListener('click', async () => {
+// ===== Eventos base =====
+btnLogout?.addEventListener('click', logout);
+
+btnAbrirCaja?.addEventListener('click', async () => {
   try {
     const r = await fetch(`${API}/caja/abrir`, {
       method: 'POST',
@@ -146,40 +145,39 @@ btnAbrirCaja.addEventListener('click', async () => {
     if (!r.ok) throw new Error(data.mensaje || 'Error al abrir caja');
     alert(data.mensaje || 'Caja abierta');
     await refreshEstadoYSaldos();
-  } catch (e) {
-    alert(e.message);
-  }
+  } catch (e) { alert(e.message); }
 });
 
-btnCerrarCaja.addEventListener('click', () => {
-  modalCerrar.classList.remove('oculto');
-  montoFinalInput.value = '';
-  montoFinalInput.focus();
-});
+btnCerrarCaja?.addEventListener('click', abrirModalCerrarCaja);
 
-confirmarCierreBtn.addEventListener('click', async () => {
-  const monto_final = Number(montoFinalInput.value || 0);
+confirmarCierreBtn?.addEventListener('click', async () => {
+  const monto_final = Number(montoFinalInput?.value || 0);
   if (isNaN(monto_final) || monto_final < 0) return alert('Ingrese un monto válido');
 
   try {
     const r = await fetch(`${API}/caja/cerrar`, {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ monto_final })
+      body: JSON.stringify({ monto_final }) // si tu API espera montoFinal, avísame y lo adapto
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.mensaje || 'Error al cerrar caja');
-    modalCerrar.classList.add('oculto');
+    cerrarModalCerrarCaja();
     alert(data.mensaje || 'Caja cerrada');
     await refreshEstadoYSaldos();
-  } catch (e) {
-    alert(e.message);
-  }
+  } catch (e) { alert(e.message); }
 });
 
-cancelarCierreBtn.addEventListener('click', () => {
-  modalCerrar.classList.add('oculto');
-  montoFinalInput.value = '';
+cancelarCierreBtn?.addEventListener('click', cerrarModalCerrarCaja);
+
+// Cerrar modal clickeando fuera del cuadro
+modalCerrar?.addEventListener('click', (e) => {
+  if (e.target === modalCerrar) cerrarModalCerrarCaja();
+});
+
+// Cerrar con ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') cerrarModalCerrarCaja();
 });
 
 // ===== Carga de datos =====
@@ -195,18 +193,19 @@ async function cargarEstadoCaja() {
 
     if (data.abierta) {
       estadoTexto.textContent = `Caja física: ABIERTA`;
-      btnAbrirCaja.classList.add('oculto');
-      btnCerrarCaja.classList.remove('oculto');
+      btnAbrirCaja?.classList.add('oculto');
+      btnCerrarCaja?.classList.remove('oculto');
     } else {
       estadoTexto.textContent = `Caja física: CERRADA`;
-      btnAbrirCaja.classList.remove('oculto');
-      btnCerrarCaja.classList.add('oculto');
+      btnAbrirCaja?.classList.remove('oculto');
+      btnCerrarCaja?.classList.add('oculto');
+      cerrarModalCerrarCaja(); // por si estaba abierto
     }
   } catch (e) {
     console.error('Estado caja:', e);
     estadoTexto.textContent = 'Error al verificar caja';
-    btnAbrirCaja.classList.add('oculto');
-    btnCerrarCaja.classList.add('oculto');
+    btnAbrirCaja?.classList.add('oculto');
+    btnCerrarCaja?.classList.add('oculto');
   }
 }
 
@@ -216,14 +215,14 @@ async function cargarSaldos() {
     const data = await r.json();
     if (!r.ok || data == null) throw new Error(data?.mensaje || 'No se pudo obtener saldos');
 
-    saldoFisicaEl.textContent = fmt(data.caja?.fisica);
+    saldoFisicaEl.textContent  = fmt(data.caja?.fisica);
     saldoVirtualEl.textContent = fmt(data.caja?.virtual);
-    saldoTotalEl.textContent = fmt(data.total);
+    saldoTotalEl.textContent   = fmt(data.total);
   } catch (e) {
     console.error('Saldos:', e);
-    saldoFisicaEl.textContent = '0,00';
+    saldoFisicaEl.textContent  = '0,00';
     saldoVirtualEl.textContent = '0,00';
-    saldoTotalEl.textContent = '0,00';
+    saldoTotalEl.textContent   = '0,00';
   }
 }
 
@@ -277,19 +276,20 @@ function renderNotifs(items){
   }
   notifEmpty.classList.add('oculto');
 
+  const frag = document.createDocumentFragment();
   items.forEach(v => {
-    const msg = `Stock bajo de ${v.nombre}${v.color ? ' – ' + v.color.toLowerCase() : ''}${v.talle ? ' / ' + v.talle : ''}`;
     const el = document.createElement('div');
     el.className = 'item';
     el.innerHTML = `
       <div>
-        <div class="msg">${msg}</div>
+        <div class="msg">Stock bajo de ${v.nombre}${v.color ? ' – ' + v.color.toLowerCase() : ''}${v.talle ? ' / ' + v.talle : ''}</div>
         <div class="meta">Variante #${v.variante_id}${v.codigo ? ` · Código: ${v.codigo}` : ''}</div>
       </div>
       <div class="qty">(${fmtInt(v.stock)})</div>
     `;
-    notifList.appendChild(el);
+    frag.appendChild(el);
   });
+  notifList.appendChild(frag);
 }
 
 function toggleNotifPanel(force){
@@ -299,22 +299,21 @@ function toggleNotifPanel(force){
 }
 
 function wireNotifs(){
-  // Abrir/cerrar panel
   notifBell?.addEventListener('click', (e) => {
     e.stopPropagation();
     toggleNotifPanel();
   });
-  // Refrescar
+
   notifRefresh?.addEventListener('click', (e) => {
     e.stopPropagation();
     cargarNotificacionesStockBajo();
   });
+
   // Cerrar con click afuera
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.notif-wrap')) {
-      notifPanel?.classList.add('oculto');
-    }
+    if (!e.target.closest('.notif-wrap')) notifPanel?.classList.add('oculto');
   });
+
   // Cerrar con Escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') notifPanel?.classList.add('oculto');
@@ -323,23 +322,16 @@ function wireNotifs(){
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', async () => {
-  // Validación de usuario logueado (sin validar rol Dueño)
   const usuario = await validarSesion();
-  if (!usuario) return; // alert + redirect ya aplicados
+  if (!usuario) return;
 
-  // Completar nombre y rol visibles
   if (spanUsuario) spanUsuario.textContent = `${usuario.nombre} (${usuario.rol})`;
 
-  // Render de la botonera según rol
   renderMenu(usuario.rol);
-
-  // Configurar visibilidad de saldos según rol
   configurarSaldosPorRol(usuario.rol);
 
-  // Cargar info de caja y saldos
   await refreshEstadoYSaldos();
 
-  // Notificaciones
   wireNotifs();
   await cargarNotificacionesStockBajo();
   setInterval(cargarNotificacionesStockBajo, 60000);

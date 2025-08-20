@@ -1,0 +1,188 @@
+/* =========================================================
+   DEVOLUCIONES — Violeta unificado + responsive + modal nice
+   Requiere: tema-violeta.css (tokens, .topbar, .btn, etc.)
+   ========================================================= */
+
+:root{
+  /* fallbacks por si faltan en el tema */
+  --border: #e5e7eb;
+  --text: #0f172a;
+  --text-muted: #64748b;
+
+  --vio-25: #faf8ff;
+  --vio-50: #f5f3ff;
+  --vio-100:#ede9fe;
+  --vio-200:#ddd6fe;
+  --vio-300:#c4b5fd;
+  --vio-400:#a78bfa;
+  --vio-500:#8b5cf6;
+  --vio-800:#5b21b6;
+  --vio-900:#4c1d95;
+}
+
+/* Contenedor principal */
+.wrap{ max-width:1100px; margin:28px auto; padding:0 16px; }
+
+/* Panel blanco con borde violeta sutil */
+.panel{
+  background:
+    linear-gradient(#fff,#fff) padding-box,
+    linear-gradient(90deg, var(--vio-200), var(--vio-400)) border-box;
+  border:1px solid transparent;
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 10px 26px rgba(2,6,23,.06);
+}
+.panel-title{ margin:0 0 12px; }
+
+/* Grillas */
+.grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.grid{ display:grid; gap:12px; }
+.grow{ flex:1; }
+.actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.justify-end{ justify-content:flex-end; }
+.justify-between{ justify-content:space-between; }
+.ml-12{ margin-left:12px; }
+.mt-16{ margin-top:16px; }
+.mt-12{ margin-top:12px; }
+.mt-6 { margin-top: 6px; }
+
+/* Inputs y selects */
+label.small{ font-size:13px; color:var(--text-muted); display:block; margin-bottom:6px; }
+input[type="number"], input[type="text"], textarea, select{
+  width:100%; padding:10px 12px;
+  background:#fff; border:1px solid var(--border); color:var(--text);
+  border-radius:10px;
+}
+input::placeholder{ color:#94a3b8; }
+
+/* Botones */
+.btn{ text-decoration:none; }            /* asegurar sin subrayado en <a> */
+.btn.sm{ padding:6px 10px; border-radius:8px; font-size:13px; }
+
+/* Tabla base */
+.tabla{ width:100%; border-collapse: separate; border-spacing:0; overflow:hidden; }
+.tabla thead th{
+  text-align:left; color:var(--text-muted); font-weight:700;
+  background: var(--vio-50);
+  position: sticky; top: 0; z-index: 2;
+}
+.tabla th, .tabla td{
+  padding:10px 8px; border-bottom:1px solid var(--border); font-size:14px; vertical-align:middle;
+}
+.tabla tbody tr:hover{ background: rgba(139,92,246,.07); } /* hover violeta suave */
+.right{ text-align:right; }
+.col-id{ width: 90px; }
+
+/* Chips y textos */
+.muted{ color:var(--text-muted); font-size:13px; }
+.tag{
+  display:inline-block; font-size:12px; padding:2px 8px;
+  border:1px solid var(--border); border-radius:999px; color:var(--text-muted); background:#fff;
+}
+.pill{
+  font-size:12px; color:#16a34a; border:1px solid rgba(22,163,74,.35);
+  padding:2px 8px; border-radius:999px; background:#ecfdf5;
+}
+.stack{ display:flex; flex-direction:column; gap:4px; }
+.qty-input{ width:96px; }
+.text-right{ text-align:right; }
+
+/* Summary */
+.summary{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.summary .box{
+  background:#fff; border:1px dashed var(--border); border-radius:12px; padding:12px;
+}
+.summary .box h4{ margin:0 0 6px; font-size:13px; color:var(--text-muted); font-weight:500; }
+.summary .box b{ font-size:18px; color: var(--vio-900); }
+
+/* Estados de botones (bordes temáticos) */
+.danger{ border-color: rgba(239,68,68,.55)!important; }
+.primary{ border-color: rgba(99,102,241,.45)!important; }
+
+/* Utiles */
+.oculto{ display:none !important; }
+
+/* ===========================
+   MODAL — centrado, con blur
+   =========================== */
+.modal{
+  position: fixed !important;
+  inset: 0;
+  width: 100vw; height: 100vh;
+  display: none;
+  align-items: center; justify-content: center;
+  background: rgba(17, 24, 39, .55);
+  backdrop-filter: blur(4px) saturate(1.1);
+  -webkit-backdrop-filter: blur(4px) saturate(1.1);
+  z-index: 999;
+  animation: modal-fade .15s ease;
+}
+.modal.abierto{ display:flex; }
+
+.modal .box{
+  width: min(920px, 92vw);
+  background:
+    linear-gradient(#fff,#fff) padding-box,
+    linear-gradient(135deg, var(--vio-200), var(--vio-400)) border-box;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  padding: 14px;
+  color: var(--text);
+  box-shadow: 0 30px 60px rgba(2,6,23,.15), 0 8px 24px rgba(2,6,23,.10);
+  animation: modal-pop .18s ease;
+}
+
+.modal .head{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin-bottom:10px;
+  position: sticky; top: -14px; /* queda pegajoso cuando hay scroll largo */
+  background: #fff; padding-top: 14px;
+  z-index: 3;
+}
+.modal .head h3{ margin:0; font-size:18px; }
+.modal .foot{ display:flex; gap:8px; align-items:center; margin-top:10px; }
+
+.toolbar{ display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+.toolbar input{
+  max-width:260px;
+  background:#fff; border:1px solid var(--border); color:var(--text);
+  border-radius:10px; padding:10px 12px;
+}
+
+.scroll{
+  max-height: 58vh;
+  overflow:auto;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+}
+
+/* Tabla dentro del modal con “card” */
+.modal .tabla{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+}
+.modal .tabla thead th{
+  background: var(--vio-50);
+}
+.clickable{ cursor:pointer; }
+.clickable:hover{ background:#f7f7fb; }
+.row-selected{ background: rgba(109,40,217,.10) !important; }
+
+/* Animaciones */
+@keyframes modal-fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes modal-pop  { from { transform: translateY(8px) scale(.985) } to { transform:none } }
+
+/* Responsive */
+@media (max-width: 900px){
+  .grid-2{ grid-template-columns:1fr; }
+  .summary{ grid-template-columns:1fr; }
+}
+
+@media (max-width: 520px){
+  .modal .box{ width: 96vw; padding: 12px; }
+  .toolbar input{ max-width: none; width: 100%; }
+}

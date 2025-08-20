@@ -9,7 +9,7 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <span class="pill">Hilos y Coo</span>
+      <div class="logo">📦</div>
       <h1>Inventario</h1>
     </div>
     <div class="controls">
@@ -20,17 +20,56 @@
   </header>
 
   <main class="wrap">
-    <div class="toolbar">
-      <input id="buscar" type="search" placeholder="Buscar por producto, código, color o talle…">
-      <label class="chk"><input id="solo-alertas" type="checkbox"> Ver productos con stock bajo</label>
-      <div></div>
-    </div>
+    <!-- Filtros -->
+    <section class="panel">
+      <h2 class="panel-title">Buscar productos</h2>
+      <div class="toolbar">
+        <div class="field with-icon" style="grid-column: span 2;">
+          <input id="buscar" type="search" placeholder="Nombre, código, color o talle…">
+          <span class="icon">🔎</span>
+        </div>
+        <div class="field">
+          <label>Categoría</label>
+          <select id="filtro-categoria">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Proveedor</label>
+          <select id="filtro-proveedor">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Stock mínimo</label>
+          <input id="min-stock" type="number" min="0" placeholder="0">
+        </div>
+        <label class="chk">
+          <input id="solo-alertas" type="checkbox">
+          <span>Solo con stock bajo</span>
+        </label>
+        <div class="field">
+          <label>Ordenar por</label>
+          <select id="orden">
+            <option value="relevancia">Relevancia</option>
+            <option value="stock-asc">Stock (menor→mayor)</option>
+            <option value="stock-desc">Stock (mayor→menor)</option>
+            <option value="nombre-asc">Nombre A→Z</option>
+            <option value="nombre-desc">Nombre Z→A</option>
+          </select>
+        </div>
+        <button id="btn-limpiar" class="btn ghost">Limpiar</button>
+      </div>
+      <div class="results">
+        <span id="resultados" class="muted">—</span>
+      </div>
+    </section>
 
     <div id="notice" class="notice">Hay productos con <b>STOCK BAJO</b>. Revisá y reponé a la brevedad.</div>
 
-    <div id="inventario-grid" class="grid"></div>
+    <section id="inventario-grid" class="grid"></section>
 
-    <div class="footer">© Hilos y Coo</div>
+    <footer class="footer">© Hilos y Coo</footer>
   </main>
 
   <!-- MODAL DE VARIANTES -->
@@ -53,7 +92,7 @@
             </div>
           </div>
           <div class="mh-actions">
-            <button id="btn-historial" class="btn btn-ghost">Historial</button>
+            <button id="btn-historial" class="btn ghost">Historial</button>
             <button id="btn-cerrar" class="btn btn-warn">Cerrar</button>
           </div>
         </div>
@@ -74,7 +113,7 @@
           <tbody id="m-tbody"></tbody>
         </table>
 
-        <!-- HISTORIAL MEJORADO -->
+        <!-- HISTORIAL -->
         <div id="historial" class="historial oculto">
           <div class="hist-toolbar">
             <select id="hist-var"></select>
@@ -96,7 +135,7 @@
               <option value="200">Últimos 200</option>
             </select>
             <div class="hist-spacer"></div>
-            <button id="hist-export" class="btn btn-ghost">Exportar CSV</button>
+            <button id="hist-export" class="btn ghost">Exportar CSV</button>
           </div>
 
           <div class="hist-table-wrap">

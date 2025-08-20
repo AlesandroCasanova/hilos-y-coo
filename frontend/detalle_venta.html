@@ -2,44 +2,64 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Detalle de Venta</title>
-  <link rel="stylesheet" href="css/detalle_venta.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Detalle de Venta | Hilos y Coo</title>
+
+  <!-- Tema violeta unificado -->
+  <link rel="stylesheet" href="css/tema-violeta.css" />
+  <!-- Estilos específicos -->
+  <link rel="stylesheet" href="css/detalle_venta.css?v=2" />
 </head>
-<body>
-  <header>
-    <span>Detalle de Venta</span>
+<body class="detalle-venta">
+  <header class="topbar">
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo">🧾</div>
+        <h1>Detalle de Venta</h1>
+      </div>
+      <div class="session">
+        <button class="btn outline" id="btn-volver" type="button" title="Volver">← Volver</button>
+      </div>
+    </div>
   </header>
 
-  <div class="main-card" id="detalleVentaCard">
-    <div class="volver-wrapper">
-      <button class="btn-volver" onclick="window.history.back()">← Volver</button>
-    </div>
-    
-    <div class="venta-titulo" id="ventaTitulo">Venta #</div>
-    <div class="venta-datos">
-      <div><b>Fecha:</b> <span id="ventaFecha"></span></div>
-      <div><b>Empleado:</b> <span id="ventaEmpleado"></span></div>
-      <div class="venta-total"><b>Total:</b> $<span id="ventaTotal"></span></div>
-    </div>
+  <main class="container">
+    <article class="invoice-card">
+      <header class="invoice-head">
+        <div class="title" id="ventaTitulo">Venta #</div>
+        <div class="meta">
+          <span class="badge"><b>Fecha:</b> <span id="ventaFecha">-</span></span>
+          <span class="badge"><b>Empleado:</b> <span id="ventaEmpleado">-</span></span>
+          <span class="badge total"><b>Total:</b> $<span id="ventaTotal">0,00</span></span>
+        </div>
+      </header>
 
-    <table class="venta-tabla">
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Talle</th>
-          <th>Color</th>
-          <th>Cantidad</th>
-          <th>Precio unitario</th>
-          <th>Subtotal</th>
-        </tr>
-      </thead>
-      <tbody id="detalleVentaBody">
-        <!-- Las filas se cargan dinámicamente por JS -->
-      </tbody>
-    </table>
-  </div>
+      <div class="table-wrap">
+        <table class="venta-tabla">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Talle</th>
+              <th>Color</th>
+              <th>Cantidad</th>
+              <th>Precio unitario</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody id="detalleVentaBody">
+            <!-- Filas por JS -->
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </main>
+
+  <footer class="footer">Hilos y Coo — Sistema interno</footer>
 
   <script type="module" src="js/detalle_venta.js"></script>
+  <script>
+    // back (sin inline CSS)
+    document.getElementById('btn-volver')?.addEventListener('click', () => history.back());
+  </script>
 </body>
 </html>

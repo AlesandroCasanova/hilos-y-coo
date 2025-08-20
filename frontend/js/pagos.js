@@ -1,29 +1,22 @@
-// js/pagos.js
+// js/pagos.js (sin sidebar, con topbar y estética lavanda)
 import { obtenerToken, logout } from './utils.js';
 
 const API = 'http://localhost:3000/api';
 let empleadosCache = [];
 let proveedoresCache = [];
 
-// --- Headers con token fresco
+/* ===== Helpers UI ===== */
+function $(sel) { return document.querySelector(sel); }
 function authHeaders(extra = {}) {
   const token = obtenerToken();
-  return {
-    'Content-Type': 'application/json',
-    Authorization: 'Bearer ' + token,
-    ...extra
-  };
+  return { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, ...extra };
 }
-
-// --- Normalizar rol
 function normalizarRol(rol) {
-  return String(rol || '')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .trim().toLowerCase();
+  return String(rol || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 }
-const ROLES_PERMITIDOS = new Set(['duenio', 'dueno']); // agregá 'admin' si hace falta
+const ROLES_PERMITIDOS = new Set(['duenio', 'dueno']); // agregar 'admin' si corresponde
 
-// --- Validar sesión
+/* ===== Sesión / Rol ===== */
 async function validarSesion() {
   const token = obtenerToken();
   if (!token) {
@@ -44,45 +37,7 @@ async function validarSesion() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const usuario = await validarSesion();
-  if (!usuario) return;
-
-  const rolNorm = normalizarRol(usuario.rol);
-  if (!ROLES_PERMITIDOS.has(rolNorm)) {
-    alert('Acceso denegado: esta sección es solo para el Dueño.');
-    window.location.href = 'dashboard.html';
-    return;
-  }
-
-  // Cargas iniciales
-  await cargarSelectEmpleados().then(cargarPagosEmpleados);
-  await cargarSelectProveedores().then(cargarPagosProveedores);
-  await cargarPagosImpuestos();
-  await cargarOtrosPagos();
-
-  // Listeners de formularios
-  document.getElementById('formEmpleado')?.addEventListener('submit', onSubmitEmpleado);
-  document.getElementById('formProveedor')?.addEventListener('submit', onSubmitProveedor);
-  document.getElementById('formImpuesto')?.addEventListener('submit', onSubmitImpuesto);
-  document.getElementById('formOtroPago')?.addEventListener('submit', onSubmitOtro);
-});
-
-// Logout desde botón
-window.cerrarSesion = logout;
-
-async function validarSaldoDisponible(caja_tipo, monto) {
-  const res = await fetch(`${API}/finanzas/saldos`, { headers: authHeaders() });
-  const data = await res.json();
-
-  // Soporta ambas estructuras
-  const fisica = data?.caja?.fisica ?? data?.fisica ?? 0;
-  const virtual = data?.caja?.virtual ?? data?.virtual ?? 0;
-
-  const saldo = caja_tipo === 'fisica' ? Number(fisica) : Number(virtual);
-  return saldo >= monto;
-}
-
+/* ===== Cargas ===== */
 async function cargarSelectEmpleados() {
   const res = await fetch(`${API}/lista-empleados`, { headers: authHeaders() });
   if (!res.ok) {
@@ -95,7 +50,8 @@ async function cargarSelectEmpleados() {
   }
   const empleados = await res.json();
   empleadosCache = empleados;
-  const select = document.getElementById('empleado');
+  const select = $('#empleado');
+  if (!select) return;
   select.innerHTML = '';
   empleados.forEach(e => {
     const opt = document.createElement('option');
@@ -117,7 +73,8 @@ async function cargarSelectProveedores() {
   }
   const proveedores = await res.json();
   proveedoresCache = proveedores;
-  const select = document.getElementById('proveedor');
+  const select = $('#proveedor');
+  if (!select) return;
   select.innerHTML = '';
   proveedores.forEach(p => {
     const opt = document.createElement('option');
@@ -131,21 +88,23 @@ async function cargarPagosEmpleados() {
   const res = await fetch(`${API}/empleado`, { headers: authHeaders() });
   if (!res.ok) return;
   const data = await res.json();
-  const tbody = document.querySelector('#tablaEmpleados tbody');
+  const tbody = $('#tablaEmpleados tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
   data.forEach(p => {
     const empleado = empleadosCache.find(e => String(e.id) === String(p.empleado_id));
-    const entidad = empleado ? empleado.nombre : p.empleado || '';
-    const fila = document.createElement('tr');
-    fila.innerHTML = `
+    const entidad = empleado ? empleado.nombre : (p.empleado || '');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
       <td>${p.id}</td>
       <td>${p.empleado}</td>
       <td>${entidad}</td>
       <td>${p.concepto || ''}</td>
-      <td>$${parseFloat(p.monto).toFixed(2)}</td>
+      <td>$${Number(p.monto || 0).toFixed(2)}</td>
       <td>${p.fecha ? new Date(p.fecha).toLocaleDateString() : ''}</td>
-      <td>${p.descripcion || ''}</td>`;
-    tbody.appendChild(fila);
+      <td>${p.descripcion || ''}</td>
+    `;
+    tbody.appendChild(tr);
   });
 }
 
@@ -153,21 +112,23 @@ async function cargarPagosProveedores() {
   const res = await fetch(`${API}/proveedor`, { headers: authHeaders() });
   if (!res.ok) return;
   const data = await res.json();
-  const tbody = document.querySelector('#tablaProveedores tbody');
+  const tbody = $('#tablaProveedores tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
   data.forEach(p => {
     const proveedor = proveedoresCache.find(e => String(e.id) === String(p.proveedor_id));
-    const entidad = proveedor ? proveedor.nombre : p.proveedor || '';
-    const fila = document.createElement('tr');
-    fila.innerHTML = `
+    const entidad = proveedor ? proveedor.nombre : (p.proveedor || '');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
       <td>${p.id}</td>
       <td>${p.proveedor}</td>
       <td>${entidad}</td>
       <td>${p.concepto || ''}</td>
-      <td>$${parseFloat(p.monto).toFixed(2)}</td>
+      <td>$${Number(p.monto || 0).toFixed(2)}</td>
       <td>${p.fecha ? new Date(p.fecha).toLocaleDateString() : ''}</td>
-      <td>${p.descripcion || ''}</td>`;
-    tbody.appendChild(fila);
+      <td>${p.descripcion || ''}</td>
+    `;
+    tbody.appendChild(tr);
   });
 }
 
@@ -175,18 +136,20 @@ async function cargarPagosImpuestos() {
   const res = await fetch(`${API}/impuestos`, { headers: authHeaders() });
   if (!res.ok) return;
   const data = await res.json();
-  const tbody = document.querySelector('#tablaImpuestos tbody');
+  const tbody = $('#tablaImpuestos tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
   data.forEach(p => {
-    const fila = document.createElement('tr');
-    fila.innerHTML = `
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
       <td>${p.id}</td>
       <td>${p.entidad || ''}</td>
       <td>${p.tipo || p.concepto || ''}</td>
-      <td>$${parseFloat(p.monto).toFixed(2)}</td>
+      <td>$${Number(p.monto || 0).toFixed(2)}</td>
       <td>${p.fecha ? new Date(p.fecha).toLocaleDateString() : ''}</td>
-      <td>${p.descripcion || ''}</td>`;
-    tbody.appendChild(fila);
+      <td>${p.descripcion || ''}</td>
+    `;
+    tbody.appendChild(tr);
   });
 }
 
@@ -194,30 +157,41 @@ async function cargarOtrosPagos() {
   const res = await fetch(`${API}/otros-pagos`, { headers: authHeaders() });
   if (!res.ok) return;
   const data = await res.json();
-  const tbody = document.querySelector('#tablaOtros tbody');
+  const tbody = $('#tablaOtros tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
   data.forEach(p => {
-    const fila = document.createElement('tr');
-    fila.innerHTML = `
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
       <td>${p.id}</td>
       <td>${p.entidad || ''}</td>
       <td>${p.concepto || ''}</td>
-      <td>$${parseFloat(p.monto).toFixed(2)}</td>
+      <td>$${Number(p.monto || 0).toFixed(2)}</td>
       <td>${p.fecha ? new Date(p.fecha).toLocaleDateString() : ''}</td>
-      <td>${p.descripcion || ''}</td>`;
-    tbody.appendChild(fila);
+      <td>${p.descripcion || ''}</td>
+    `;
+    tbody.appendChild(tr);
   });
 }
 
-// ---------- Submit handlers ----------
+async function validarSaldoDisponible(caja_tipo, monto) {
+  const res = await fetch(`${API}/finanzas/saldos`, { headers: authHeaders() });
+  const data = await res.json();
+  const fisica = data?.caja?.fisica ?? data?.fisica ?? 0;
+  const virtual = data?.caja?.virtual ?? data?.virtual ?? 0;
+  const saldo = caja_tipo === 'fisica' ? Number(fisica) : Number(virtual);
+  return saldo >= Number(monto || 0);
+}
+
+/* ===== Submits ===== */
 async function onSubmitEmpleado(e) {
   e.preventDefault();
-  const empleado_id = document.getElementById('empleado').value;
+  const empleado_id = $('#empleado').value;
   const entidad = empleadosCache.find(emp => String(emp.id) === String(empleado_id))?.nombre || '';
-  const concepto = document.getElementById('conceptoEmpleado').value;
-  const monto = parseFloat(document.getElementById('montoEmpleado').value);
-  const descripcion = document.getElementById('descripcionEmpleado').value;
-  const caja_tipo = document.getElementById('cajaEmpleado').value;
+  const concepto = $('#conceptoEmpleado').value;
+  const monto = parseFloat($('#montoEmpleado').value);
+  const descripcion = $('#descripcionEmpleado').value;
+  const caja_tipo = $('#cajaEmpleado').value;
 
   if (!await validarSaldoDisponible(caja_tipo, monto)) {
     return alert(`Saldo insuficiente en caja ${caja_tipo.toUpperCase()} para pagar $${monto}`);
@@ -228,7 +202,6 @@ async function onSubmitEmpleado(e) {
     headers: authHeaders(),
     body: JSON.stringify({ empleado_id, entidad, concepto, monto, descripcion, caja_tipo, fecha: new Date().toISOString() })
   });
-
   const data = await res.json();
   if (res.ok) {
     alert(data.mensaje || 'Pago registrado');
@@ -241,12 +214,12 @@ async function onSubmitEmpleado(e) {
 
 async function onSubmitProveedor(e) {
   e.preventDefault();
-  const proveedor_id = document.getElementById('proveedor').value;
+  const proveedor_id = $('#proveedor').value;
   const entidad = proveedoresCache.find(p => String(p.id) === String(proveedor_id))?.nombre || '';
-  const concepto = document.getElementById('conceptoProveedor').value;
-  const monto = parseFloat(document.getElementById('montoProveedor').value);
-  const descripcion = document.getElementById('descripcionProveedor').value;
-  const caja_tipo = document.getElementById('cajaProveedor').value;
+  const concepto = $('#conceptoProveedor').value;
+  const monto = parseFloat($('#montoProveedor').value);
+  const descripcion = $('#descripcionProveedor').value;
+  const caja_tipo = $('#cajaProveedor').value;
 
   if (!await validarSaldoDisponible(caja_tipo, monto)) {
     return alert(`Saldo insuficiente en caja ${caja_tipo.toUpperCase()} para pagar $${monto}`);
@@ -257,7 +230,6 @@ async function onSubmitProveedor(e) {
     headers: authHeaders(),
     body: JSON.stringify({ proveedor_id, entidad, concepto, monto, descripcion, caja_tipo, fecha: new Date().toISOString() })
   });
-
   const data = await res.json();
   if (res.ok) {
     alert(data.mensaje || 'Pago registrado');
@@ -270,11 +242,11 @@ async function onSubmitProveedor(e) {
 
 async function onSubmitImpuesto(e) {
   e.preventDefault();
-  const entidad = document.getElementById('entidadImpuesto').value;
-  const concepto = document.getElementById('conceptoImpuesto').value;
-  const monto = parseFloat(document.getElementById('montoImpuesto').value);
-  const descripcion = document.getElementById('descripcionImpuesto').value;
-  const caja_tipo = document.getElementById('cajaImpuesto').value;
+  const entidad = $('#entidadImpuesto').value;
+  const concepto = $('#conceptoImpuesto').value;
+  const monto = parseFloat($('#montoImpuesto').value);
+  const descripcion = $('#descripcionImpuesto').value;
+  const caja_tipo = $('#cajaImpuesto').value;
 
   if (!await validarSaldoDisponible(caja_tipo, monto)) {
     return alert(`Saldo insuficiente en caja ${caja_tipo.toUpperCase()} para pagar $${monto}`);
@@ -285,7 +257,6 @@ async function onSubmitImpuesto(e) {
     headers: authHeaders(),
     body: JSON.stringify({ entidad, concepto, monto, descripcion, caja_tipo })
   });
-
   const data = await res.json();
   if (res.ok) {
     alert(data.mensaje || 'Impuesto registrado');
@@ -298,11 +269,11 @@ async function onSubmitImpuesto(e) {
 
 async function onSubmitOtro(e) {
   e.preventDefault();
-  const entidad = document.getElementById('entidadOtro').value;
-  const concepto = document.getElementById('conceptoOtro').value;
-  const monto = parseFloat(document.getElementById('montoOtro').value);
-  const descripcion = document.getElementById('descripcionOtro').value;
-  const caja_tipo = document.getElementById('cajaOtro').value;
+  const entidad = $('#entidadOtro').value;
+  const concepto = $('#conceptoOtro').value;
+  const monto = parseFloat($('#montoOtro').value);
+  const descripcion = $('#descripcionOtro').value;
+  const caja_tipo = $('#cajaOtro').value;
 
   if (!await validarSaldoDisponible(caja_tipo, monto)) {
     return alert(`Saldo insuficiente en caja ${caja_tipo.toUpperCase()} para pagar $${monto}`);
@@ -313,7 +284,6 @@ async function onSubmitOtro(e) {
     headers: authHeaders(),
     body: JSON.stringify({ entidad, concepto, monto, descripcion, caja_tipo })
   });
-
   const data = await res.json();
   if (res.ok) {
     alert(data.mensaje || 'Egreso registrado');
@@ -323,3 +293,38 @@ async function onSubmitOtro(e) {
     alert(data.error || 'Error al registrar egreso');
   }
 }
+
+/* ===== Init ===== */
+async function recargarData() {
+  await cargarSelectEmpleados().then(cargarPagosEmpleados);
+  await cargarSelectProveedores().then(cargarPagosProveedores);
+  await cargarPagosImpuestos();
+  await cargarOtrosPagos();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const usuario = await validarSesion();
+  if (!usuario) return;
+
+  // Mostrar usuario en header
+  const rolNorm = normalizarRol(usuario.rol);
+  $('#usuario-logueado') && ($('#usuario-logueado').textContent = `${usuario.nombre || 'Usuario'} (${usuario.rol})`);
+
+  if (!ROLES_PERMITIDOS.has(rolNorm)) {
+    alert('Acceso denegado: esta sección es solo para el Dueño.');
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
+  await recargarData();
+
+  // Listeners header
+  $('#btn-refrescar')?.addEventListener('click', recargarData);
+  $('#btn-salir')?.addEventListener('click', (e) => { e.preventDefault(); logout(); });
+
+  // Listeners formularios
+  $('#formEmpleado')?.addEventListener('submit', onSubmitEmpleado);
+  $('#formProveedor')?.addEventListener('submit', onSubmitProveedor);
+  $('#formImpuesto')?.addEventListener('submit', onSubmitImpuesto);
+  $('#formOtroPago')?.addEventListener('submit', onSubmitOtro);
+});

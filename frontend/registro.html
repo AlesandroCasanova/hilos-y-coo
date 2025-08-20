@@ -4,27 +4,66 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Registro Dueño | Hilos y Coo</title>
-  <link rel="stylesheet" href="css/login.css" />
+  <link rel="stylesheet" href="css/registro.css" />
 </head>
 <body>
-  <div class="login-container">
-    <h1>Crear Dueño</h1>
-    <form id="registroForm" autocomplete="off">
-      <label for="nombre">Nombre completo</label>
-      <input type="text" id="nombre" required />
+  <!-- Orbes de fondo -->
+  <div class="bg-orb"></div>
 
-      <label for="email">Correo electrónico</label>
-      <input type="email" id="email" required />
+  <div class="register-wrapper">
+    <div class="card">
+      <!-- Panel visual -->
+      <div class="card-visual">
+        <div class="brand">
+          <span class="pill">Hilos y Coo</span>
+          <h1>Crear Dueño</h1>
+        </div>
+        <div class="visual-copy">
+          <h2>Bienvenido 👋</h2>
+          <p>Configura al primer usuario “Dueño” para habilitar el sistema. Seguridad, diseño y control, todo en uno.</p>
+        </div>
+      </div>
 
-      <label for="password">Contraseña</label>
-      <input type="password" id="password" required minlength="6" />
+      <!-- Panel formulario -->
+      <div class="card-form">
+        <form id="registroForm" autocomplete="off">
+          <div>
+            <label for="nombre">Nombre completo</label>
+            <input class="input" type="text" id="nombre" required />
+          </div>
 
-      <!-- IMPORTANTE: en la BD el rol es 'duenio' (sin eñe visible) -->
-      <input type="hidden" id="rol" value="duenio" />
+          <div>
+            <label for="email">Correo electrónico</label>
+            <input class="input" type="email" id="email" required />
+          </div>
 
-      <button type="submit">Registrar</button>
-      <p id="mensaje" class="error"></p>
-    </form>
+          <div>
+            <label for="password">Contraseña</label>
+            <input class="input" type="password" id="password" required minlength="6" />
+          </div>
+
+          <!-- IMPORTANTE: en la BD el rol es 'duenio' (sin eñe visible) -->
+          <input type="hidden" id="rol" value="duenio" />
+
+          <button id="btn-registrar" type="submit" class="btn primary">
+            <span class="btn-label">Registrar</span>
+          </button>
+
+          <p id="mensaje" class="msg" aria-live="polite"></p>
+          <p class="note">Tus datos se cifran en tránsito. Solo el primer usuario tendrá rol de <b>Dueño</b>.</p>
+        </form>
+
+        <!-- Overlay de éxito -->
+        <div id="successOverlay" class="success-overlay" aria-hidden="true">
+          <div class="check" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="success-text">¡Registro exitoso!</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="js/registro.js"></script>

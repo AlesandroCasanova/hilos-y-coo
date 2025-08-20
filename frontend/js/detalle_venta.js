@@ -11,24 +11,25 @@ const token = obtenerToken();
 document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
+
   if (!id) {
-    mostrarMensaje("Venta no encontrada", "error");
-    document.body.innerHTML = "<h2>Venta no encontrada</h2>";
+    mostrarMensaje?.("Venta no encontrada", "error");
+    document.body.innerHTML = "<h2 style='padding:16px'>Venta no encontrada</h2>";
     return;
   }
 
   try {
-    // Traer info general de la venta (vendedor, fecha, total)
+    // 1) Info general
     const ventas = await fetchConToken(`${API}/ventas`).then(res => res.json());
-    const venta = ventas.find(v => v.id == id);
+    const venta = (Array.isArray(ventas) ? ventas : []).find(v => String(v.id) === String(id));
 
     if (!venta) {
-      mostrarMensaje("Venta no encontrada", "error");
-      document.body.innerHTML = "<h2>Venta no encontrada</h2>";
+      mostrarMensaje?.("Venta no encontrada", "error");
+      document.body.innerHTML = "<h2 style='padding:16px'>Venta no encontrada</h2>";
       return;
     }
 
-    // Cargar datos principales
+    // Cabecera
     document.getElementById('ventaTitulo').textContent = `Venta #${venta.id}`;
     document.getElementById('ventaFecha').textContent = venta.fecha
       ? new Date(venta.fecha).toLocaleString('es-AR')
@@ -38,25 +39,39 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? Number(venta.total).toLocaleString('es-AR', { minimumFractionDigits: 2 })
       : '0,00';
 
-    // Traer detalle de la venta
+    // 2) Detalle
     const detalle = await fetchConToken(`${API}/venta/${id}`).then(res => res.json());
     const tbody = document.getElementById('detalleVentaBody');
     tbody.innerHTML = '';
-    detalle.forEach(item => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${item.producto}</td>
-          <td>${item.talle}</td>
-          <td>${item.color}</td>
-          <td>${item.cantidad}</td>
-          <td>$${Number(item.precio_unitario).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
-          <td><b>$${(item.precio_unitario * item.cantidad).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</b></td>
-        </tr>
-      `;
-    });
 
+    (Array.isArray(detalle) ? detalle : []).forEach(item => {
+      const precio = Number(item.precio_unitario || 0);
+      const cantidad = Number(item.cantidad || 0);
+      const subtotal = precio * cantidad;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(item.producto)}</td>
+        <td>${escapeHtml(item.talle)}</td>
+        <td>${escapeHtml(item.color)}</td>
+        <td>${cantidad}</td>
+        <td>$${precio.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
+        <td>$${subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
+      `;
+      tbody.appendChild(tr);
+    });
   } catch (err) {
-    mostrarMensaje("Error al cargar detalle de venta", "error");
     console.error(err);
+    mostrarMensaje?.("Error al cargar detalle de venta", "error");
   }
 });
+
+// Util — Sanitizar HTML
+function escapeHtml(str=''){
+  return String(str ?? '')
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#39;');
+}

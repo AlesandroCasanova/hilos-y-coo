@@ -7,78 +7,104 @@
   <link rel="stylesheet" href="css/pedidos.css">
 </head>
 <body>
-  <div class="sidebar">
-    <h2>Hilos y Coo</h2>
-    <ul>
-      <li><a href="dashboard.html">Dashboard</a></li>
-      <li><a href="pedidos.html" class="active">Pedidos a Proveedores</a></li>
-      <li><a href="index.html" onclick="localStorage.clear()">Salir</a></li>
-    </ul>
-  </div>
+
+  <!-- TOPBAR (sin sidebar) -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="pill">Hilos y Coo</span>
+      <h1>Pedidos a Proveedores</h1>
+    </div>
+    <div class="controls">
+      <span class="user">Usuario: <b id="usuario-logueado">—</b></span>
+      <a href="dashboard.html" class="btn ghost">← Dashboard</a>
+      <a href="finanzas.html" class="btn ghost">📈 Finanzas</a>
+      <a href="pagos.html" class="btn ghost">💰 Pagos</a>
+      <button id="btn-refrescar" class="btn warn" title="Recargar datos">⟳ Refrescar</button>
+      <button id="btn-salir" class="btn primary">Salir</button>
+    </div>
+  </header>
 
   <main class="contenido">
-    <h1>Registrar nuevo pedido a proveedor</h1>
-    <form id="form-pedido" enctype="multipart/form-data">
-      <label for="proveedor">Proveedor:</label>
-      <select id="proveedor" name="proveedor_id" required></select>
-
-      <label for="fecha">Fecha del pedido:</label>
-      <input type="date" id="fecha_pedido" name="fecha_pedido" required>
-
-      <label for="monto">Monto total ($):</label>
-      <input type="number" id="monto" name="monto_total" min="1" required>
-
-      <label for="archivo">Comprobante (imagen o PDF):</label>
-      <input type="file" id="archivo" name="archivo" accept=".jpg,.jpeg,.png,.pdf">
-
-      <label for="observaciones">Observaciones:</label>
-      <textarea id="observaciones" name="observaciones" rows="2"></textarea>
-
-      <button type="submit">Registrar pedido</button>
-    </form>
-
-    <hr />
-
-    <h2>Pedidos registrados</h2>
-    <div id="resumen-general">
-      <p><strong>Deuda total pendiente:</strong> $<span id="total-deuda">0.00</span></p>
+    <div class="page-head">
+      <h2 class="page-title">Registrar nuevo pedido a proveedor</h2>
+      <p class="page-sub">Subí comprobantes (imagen o PDF), cargá monto y fecha. Calculamos vencimientos a 30/60 días.</p>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Proveedor</th>
-          <th>Fecha</th>
-          <th>Monto</th>
-          <th>Pagado</th>
-          <th>Falta</th>
-          <th>Venc. 1</th>
-          <th>Días faltan</th>
-          <th>Venc. 2</th>
-          <th>Días faltan</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-pedidos">
-        <!-- Cargado dinámicamente -->
-      </tbody>
-    </table>
+    <!-- Formulario pedido -->
+    <form id="form-pedido" class="card" enctype="multipart/form-data" autocomplete="off">
+      <label for="proveedor">Proveedor</label>
+      <select id="proveedor" name="proveedor_id" required></select>
+
+      <label for="fecha_pedido">Fecha del pedido</label>
+      <input class="input" type="date" id="fecha_pedido" name="fecha_pedido" required>
+
+      <label for="monto">Monto total ($)</label>
+      <input class="input" type="number" id="monto" name="monto_total" min="1" step="0.01" required>
+
+      <label for="archivo">Comprobante (imagen o PDF)</label>
+      <div class="file-upload">
+        <!-- input real, oculto a la vista pero accesible para lectores -->
+        <input class="sr-only" type="file" id="archivo" name="archivo" accept=".jpg,.jpeg,.png,.pdf">
+        <!-- botón custom que dispara el input -->
+        <label for="archivo" class="btn ghost file-btn">Elegir archivo</label>
+        <!-- nombre del archivo elegido -->
+        <span class="file-name" id="archivo-nombre">Ningún archivo seleccionado</span>
+      </div>
+
+      <label for="observaciones">Observaciones</label>
+      <textarea class="input" id="observaciones" name="observaciones" rows="2" placeholder="Opcional"></textarea>
+
+      <button type="submit" class="btn primary" style="justify-self:end; min-width: 180px;">Registrar pedido</button>
+    </form>
+
+    <hr class="hr-soft"/>
+
+    <!-- Resumen -->
+    <section id="resumen-general" class="card card-info" aria-live="polite">
+      <p><strong>Deuda total pendiente:</strong> $<span id="total-deuda">0.00</span></p>
+    </section>
+
+    <!-- Tabla de pedidos -->
+    <section class="card card-table" style="margin-top:14px;">
+      <h2>Pedidos registrados</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Proveedor</th>
+              <th>Fecha</th>
+              <th>Monto</th>
+              <th>Pagado</th>
+              <th>Falta</th>
+              <th>Venc. 1</th>
+              <th>Días faltan</th>
+              <th>Venc. 2</th>
+              <th>Días faltan</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-pedidos">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
   <script type="module" src="js/pedidos.js"></script>
 
   <!-- Modal de pago -->
-  <div id="modal-pago" class="modal" style="display:none;">
-    <div class="modal-contenido">
-      <h2>Registrar pago</h2>
-      <form id="form-pago">
+  <div id="modal-pago" class="modal" aria-hidden="true">
+    <div class="modal-contenido" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-pago">
+      <h2 id="titulo-modal-pago">Registrar pago</h2>
+      <form id="form-pago" autocomplete="off">
         <input type="hidden" id="pedido_id" />
-        
-        <label>Monto a pagar:</label>
-        <input type="number" id="monto_total_pago" min="0" required />
 
-        <label>Elegí forma de pago:</label>
+        <label for="monto_total_pago">Monto a pagar</label>
+        <input class="input" type="number" id="monto_total_pago" min="0" step="0.01" required />
+
+        <label for="fuentes_pago">Elegí forma de pago</label>
         <select id="fuentes_pago" multiple size="4" required>
           <option value="caja_fisica">Caja física</option>
           <option value="caja_virtual">Caja virtual</option>
@@ -86,31 +112,37 @@
           <option value="reserva_virtual">Reserva virtual</option>
         </select>
 
-        <div id="distribucion" style="margin-top:15px;"></div>
+        <div id="distribucion" style="margin-top:6px;"></div>
 
-        <button type="submit">Confirmar pago</button>
-        <button type="button" onclick="cerrarModal()">Cancelar</button>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" onclick="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn primary">Confirmar pago</button>
+        </div>
       </form>
     </div>
   </div>
 
   <!-- Modal de historial -->
-  <div id="modal-historial" class="modal" style="display:none;">
-    <div class="modal-contenido">
-      <h2>Historial de pagos</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Monto</th>
-            <th>Fuente</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-historial">
-          <!-- Dinámico -->
-        </tbody>
-      </table>
-      <button onclick="cerrarModalHistorial()">Cerrar</button>
+  <div id="modal-historial" class="modal" aria-hidden="true">
+    <div class="modal-contenido" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-historial">
+      <h2 id="titulo-modal-historial">Historial de pagos</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Monto</th>
+              <th>Fuente</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-historial">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-actions">
+        <button class="btn primary" onclick="cerrarModalHistorial()">Cerrar</button>
+      </div>
     </div>
   </div>
 </body>
